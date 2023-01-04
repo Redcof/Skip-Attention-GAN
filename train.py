@@ -3,7 +3,7 @@ TRAIN SKIP-ATTENTION GANOMALY
 
 . Example: Run the following command from the terminal.
     run train.py                                    \
-        --model <skipganomaly, ganomaly>            \
+        --model <skipganomaly, ganomaly, skipattentionganomaly>            \
         --dataset cifar10                           \
         --abnormal_class airplane                   \
         --display                                   \

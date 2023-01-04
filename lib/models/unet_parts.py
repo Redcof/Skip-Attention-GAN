@@ -4,7 +4,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from SoftPool import soft_pool2d, SoftPool2d
+# from SoftPool import soft_pool2d, SoftPool2d
 
 class DoubleConv(nn.Module):
     """(convolution => [BN] => ReLU) * 2"""
@@ -32,8 +32,8 @@ class Down(nn.Module):
     def __init__(self, in_channels, out_channels):
         super().__init__()
         self.maxpool_conv = nn.Sequential(
-            # nn.MaxPool2d(2),
-            SoftPool2d(),
+            nn.MaxPool2d(2),
+            # SoftPool2d(),
             DoubleConv(in_channels, out_channels)
         )
 

@@ -1,0 +1,14 @@
+python train.py
+--model skipattentionganomaly
+--dataroot /Users/soumen/Desktop/Skip-Attention-GAN/customdataset/atz
+--manualseed 47
+--name abs_1_20230104
+--device cpu
+--gpu_ids ""
+--dataset atz
+--verbose
+--print_freq 10
+--phase train
+--isize 512
+--verbose
+--batchsize 8

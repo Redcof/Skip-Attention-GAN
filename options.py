@@ -13,7 +13,7 @@ import torch
 
 # pylint: disable=C0103,C0301,R0903,W0622
 
-class Options():
+class Options:
     """Options class
 
     Returns:
@@ -24,6 +24,8 @@ class Options():
         ##
         #
         self.parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+
+        models = ["ganomaly", "skipganomaly", "skipattentionganomaly"]
 
         ##
         # Base
@@ -43,8 +45,8 @@ class Options():
         self.parser.add_argument('--gpu_ids', type=str, default='0', help='gpu ids: e.g. 0  0,1,2, 0,2. use -1 for CPU')
         self.parser.add_argument('--ngpu', type=int, default=1, help='number of GPUs to use')
         self.parser.add_argument('--name', type=str, default='experiment_name', help='name of the experiment')
-        self.parser.add_argument('--model', type=str, default='skipganomaly',
-                                 help='chooses which model to use. skipganomaly')
+        self.parser.add_argument('--model', type=str, default='skipganomaly', choices=models,
+                                 help='chooses which model to use.')
         self.parser.add_argument('--display_server', type=str, default="http://localhost",
                                  help='visdom server of the web display')
         self.parser.add_argument('--display_port', type=int, default=8097, help='visdom port of the web display')
@@ -90,12 +92,15 @@ class Options():
         self.opt.isTrain = self.isTrain  # train or test
 
         # get gpu ids
-        str_ids = self.opt.gpu_ids.split(',')
-        self.opt.gpu_ids = []
-        for str_id in str_ids:
-            id = int(str_id)
-            if id >= 0:
-                self.opt.gpu_ids.append(id)
+        if str(self.opt.gpu_ids).strip() != "":
+            str_ids = self.opt.gpu_ids.split(',')
+            self.opt.gpu_ids = []
+            for str_id in str_ids:
+                idx = int(str_id)
+                if idx >= 0:
+                    self.opt.gpu_ids.append(idx)
+        else:
+            self.opt.gpu_ids = []
 
         # set gpu ids
         if len(self.opt.gpu_ids) > 0:
