@@ -116,7 +116,7 @@ class Skipattentionganomaly(BaseModel):
         """ Forward propagate through netD
         """
         self.pred_real, self.feat_real = self.netd(self.input)
-        self.pred_fake, self.feat_fake = self.netd(self.fake)
+        self.pred_fake, self.feat_fake = self.netd(self.fake.detach())
 
     def backward_g(self):
         """ Backpropagate netg
@@ -140,8 +140,6 @@ class Skipattentionganomaly(BaseModel):
         # Real
         # pred_real, feat_real = self.netd(self.input)
         self.err_d_real = self.l_adv(self.pred_real, self.real_label)
-
-        self.err_g_lat = self.opt.w_lat * self.l_lat(self.feat_fake, self.feat_real)
 
         # Combine losses.
         self.err_d = self.err_d_real + self.err_d_fake + self.err_g_lat
