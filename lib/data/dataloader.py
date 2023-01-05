@@ -12,12 +12,15 @@ from torchvision.datasets import MNIST, CIFAR10, ImageFolder
 from lib.data.datasets import get_cifar_anomaly_dataset
 from lib.data.datasets import get_mnist_anomaly_dataset
 
+
 class Data:
     """ Dataloader containing train and valid sets.
     """
+
     def __init__(self, train, valid):
         self.train = train
         self.valid = valid
+
 
 ##
 def load_data(opt):
@@ -53,7 +56,6 @@ def load_data(opt):
         transform = transforms.Compose([transforms.Resize(opt.isize),
                                         transforms.ToTensor(),
                                         transforms.Normalize((0.1307,), (0.3081,))])
-
 
         train_ds = MNIST(root='./data', train=True, download=True, transform=transform)
         valid_ds = MNIST(root='./data', train=False, download=True, transform=transform)

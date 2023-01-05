@@ -61,3 +61,4 @@ websocket-client==0.56.0
 # torch
 # torchvision
 # matplotlib
+# PyWavelets
