@@ -5,7 +5,11 @@ import torch.nn as nn
 import torch.nn.functional as F
 from .layers import DepthwiseSeparableConv
 
-# from SoftPool import soft_pool2d, SoftPool2d
+try:
+    from SoftPool import soft_pool2d, SoftPool2d
+except ImportError:
+    ...
+
 
 class DoubleConvDS(nn.Module):
     """(convolution => [BN] => ReLU) * 2"""
@@ -15,10 +19,12 @@ class DoubleConvDS(nn.Module):
         if not mid_channels:
             mid_channels = out_channels
         self.double_conv = nn.Sequential(
-            DepthwiseSeparableConv(in_channels, mid_channels, kernel_size=3, kernels_per_layer=kernels_per_layer, padding=1),
+            DepthwiseSeparableConv(in_channels, mid_channels, kernel_size=3, kernels_per_layer=kernels_per_layer,
+                                   padding=1),
             nn.BatchNorm2d(mid_channels),
             nn.ReLU(inplace=True),
-            DepthwiseSeparableConv(mid_channels, out_channels, kernel_size=3, kernels_per_layer=kernels_per_layer, padding=1),
+            DepthwiseSeparableConv(mid_channels, out_channels, kernel_size=3, kernels_per_layer=kernels_per_layer,
+                                   padding=1),
             nn.BatchNorm2d(out_channels),
             nn.ReLU(inplace=True)
         )
@@ -32,9 +38,12 @@ class DownDS(nn.Module):
 
     def __init__(self, in_channels, out_channels, kernels_per_layer=1):
         super().__init__()
+        try:
+            pool = SoftPool2d()
+        except ModuleNotFoundError:
+            pool = nn.MaxPool2d(2)
         self.maxpool_conv = nn.Sequential(
-            nn.MaxPool2d(2),
-            # SoftPool2d(),
+            pool,
             DoubleConvDS(in_channels, out_channels, kernels_per_layer=kernels_per_layer)
         )
 

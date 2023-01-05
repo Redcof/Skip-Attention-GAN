@@ -17,6 +17,7 @@ class Visualizer():
     Returns:
         Visualizer: Class file.
     """
+
     # pylint: disable=too-many-instance-attributes
     # Reasonable.
 
@@ -50,11 +51,10 @@ class Visualizer():
         # with open(self.log_name, "a") as log_file:
         #     now = time.strftime("%c")
         #     log_file.write('================ Training Loss (%s) ================\n' % now)
-        now  = time.strftime("%c")
+        now = time.strftime("%c")
         title = f'================ {now} ================\n'
-        info  = f'{opt.abnormal_class}, {opt.nz}, {opt.w_adv}, {opt.w_con}, {opt.w_lat}\n'
+        info = f'{opt.abnormal_class}, {opt.nz}, {opt.w_adv}, {opt.w_con}, {opt.w_lat}\n'
         self.write_to_log_file(text=title + info)
-
 
     ##
     @staticmethod
@@ -189,4 +189,4 @@ class Visualizer():
         """
         vutils.save_image(reals, '%s/reals.png' % self.img_dir, normalize=True)
         vutils.save_image(fakes, '%s/fakes.png' % self.img_dir, normalize=True)
-        vutils.save_image(fixed, '%s/fixed_fakes_%03d.png' %(self.img_dir, epoch+1), normalize=True)
+        vutils.save_image(fixed, '%s/fixed_fakes_%03d.png' % (self.img_dir, epoch + 1), normalize=True)
