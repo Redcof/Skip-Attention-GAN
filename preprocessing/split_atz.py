@@ -7,6 +7,7 @@ import cv2
 import matplotlib.pyplot as plt
 
 from preprocess_options import PreprocessOptions
+from preprocessing.utils import read_content
 
 
 def copy_files(files, src_root, dest_root):
@@ -74,31 +75,6 @@ def create_dataset(src_dir, dataset_dir, is_normal, ablation=False):
 # create a dataset for SAGAN from ATZ
 img_root = pathlib.Path("/Users/soumen/Downloads/Datasets/Active Terahertz Imaging Dataset")
 voc_root = img_root / "THZ_dataset_det_VOC/Annotations"
-
-import xml.etree.ElementTree as ET
-from io import StringIO, BytesIO
-
-
-def read_content(xml_file: str):
-    tree = ET.parse(xml_file)
-    root = tree.getroot()
-
-    list_with_all_boxes = []
-
-    filename = root.find('filename').text
-    for boxes in root.iter('object'):
-        class_ = boxes.find("name").text
-        ymin = int(boxes.find("bndbox/ymin").text)
-        xmin = int(boxes.find("bndbox/xmin").text)
-        ymax = int(boxes.find("bndbox/ymax").text)
-        xmax = int(boxes.find("bndbox/xmax").text)
-        cx = (xmin + xmax) / 2
-        cy = (ymin + ymax) / 2
-
-        list_with_single_boxes = (xmin, ymin, xmax, ymax, cx, cy, class_)
-        list_with_all_boxes.append(list_with_single_boxes)
-
-    return filename, list_with_all_boxes
 
 
 def check_normal(path):

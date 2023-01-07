@@ -6,6 +6,8 @@ LOAD DATA from file.
 
 ##
 import os
+
+import pywt
 from torchvision import transforms
 from torch.utils.data import DataLoader
 from torchvision.datasets import MNIST, CIFAR10, ImageFolder
@@ -63,8 +65,15 @@ def load_data(opt):
 
     # FOLDER
     else:
-        transform = transforms.Compose([transforms.Resize(opt.isize),
+        def wavelet_transform(x):
+            # https://www.mathworks.com/help/wavelet/referencelist.html?type=function&category=denoising&s_tid=CRUX_topnav
+            #
+            w = pywt.Wavelet('bior4.4')
+            return x
+
+        transform = transforms.Compose([transforms.Resize((opt.isize, opt.isize)),
                                         transforms.CenterCrop(opt.isize),
+                                        transforms.Lambda(wavelet_transform),
                                         transforms.ToTensor(),
                                         transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)), ])
 

@@ -62,3 +62,5 @@ websocket-client==0.56.0
 # torchvision
 # matplotlib
 # PyWavelets
+# empatches
+# patchify
