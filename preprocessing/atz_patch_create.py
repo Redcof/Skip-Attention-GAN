@@ -23,14 +23,14 @@ atz_classes = ["NORMAL0", "NORMAL1", "HUMAN",
                "KC", "WB", "LW", "CK", "CL"]
 # index for a class from the `atz_classes` list. Any class upto 'SS'
 # in that list will be ignored during dataset creation, set -1 to consider all classes
-atz_ignore_cls_idx_lim = -1  # atz_classes.index("WB")
+atz_ignore_cls_idx_lim = atz_classes.index("HUMAN")
 
 root = pathlib.Path("/Users/soumen/Downloads/Datasets/Active Terahertz Imaging Dataset")
 image_root = root / "THZ_dataset_det_VOC/JPEGImages"
 voc_root = root / "THZ_dataset_det_VOC/Annotations"
 display = False  # display plots
 dataset_save_path = pathlib.Path("./patch_atz")
-patch_size = 128  # 64, 128
+patch_size = 64  # 64, 128
 
 # create save directory
 patch_image_save_path = dataset_save_path / "images"
