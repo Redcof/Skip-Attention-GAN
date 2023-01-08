@@ -5,30 +5,40 @@ import pathlib
 import os
 import cv2
 import matplotlib.pyplot as plt
+from tqdm import tqdm
 
-from preprocess_options import PreprocessOptions
+from atz_preprocess_options import ATZPreprocessOptions
 from preprocessing.utils import read_vocxml_content
 
 
-def copy_files(files, src_root, dest_root):
-    for im_name in files:
-        # objects are present
-        im_src = str(src_root / im_name)
-        im_dest = str(dest_root / im_name)
-        shutil.copy(im_src, im_dest)
+def copy_files(files, src_root, dest_root, save_image, txt_file):
+    with open(txt_file, "a") as fp:
+        for im_name in tqdm(files):
+            # objects are present
+            im_src = str(src_root / im_name)
+            im_dest = str(dest_root / im_name)
+            if save_image:
+                shutil.copy(im_src, im_dest)
+            fp.write("%s\n" % im_name)
 
 
-def create_dataset(src_dir, dataset_dir, is_normal, ablation=False):
+def create_dataset(src_dir, dataset_dir, is_normal, ablation=0, save_image=False, train_split=0.8):
     train_normal_path = dataset_dir / "train" / "0.normal"
     test_normal_path = dataset_dir / "test" / "0.normal"
     test_abnormal_path = dataset_dir / "test" / "1.abnormal"
+    train_dataset_txt = str(dataset_dir / "atz_dataset_train_postfix.txt")
+    test_dataset_txt = str(dataset_dir / "atz_dataset_test_postfix.txt")
 
+    os.makedirs(str(dataset_dir), exist_ok=True)
     # cleanup
     shutil.rmtree(str(dataset_dir / "train"), ignore_errors=True)
     shutil.rmtree(str(dataset_dir / "test"), ignore_errors=True)
-    os.makedirs(str(train_normal_path))
-    os.makedirs(str(test_normal_path))
-    os.makedirs(str(test_abnormal_path))
+
+    if save_image:
+        # create folder if required
+        os.makedirs(str(train_normal_path))
+        os.makedirs(str(test_normal_path))
+        os.makedirs(str(test_abnormal_path))
 
     # list images
     files = os.listdir(str(src_dir))
@@ -44,36 +54,54 @@ def create_dataset(src_dir, dataset_dir, is_normal, ablation=False):
         else:
             abnormal.append(image_name)
 
-    if ablation:
-        normal = normal[:20]
-        abnormal = abnormal[:10]
-        print("Preparing data for ablation study")
-    else:
-        print("Preparing full data")
-
     # shuffle filenames
     random.seed(47)
     random.shuffle(normal)
+    random.seed(47)
+    random.shuffle(abnormal)
+
+    if ablation > 0:
+        normal = normal[:ablation * 2]
+        abnormal = abnormal[:ablation]
+        train_dataset_txt = train_dataset_txt.replace("postfix", ("ablation_%d" % ablation))
+        test_dataset_txt = test_dataset_txt.replace("postfix", ("ablation_%d" % ablation))
+        print("Preparing data for ablation study.")
+    else:
+        train_dataset_txt = train_dataset_txt.replace("postfix", "")
+        test_dataset_txt = test_dataset_txt.replace("postfix", "")
+        print("Preparing full data.")
+
+    # cleanup dataset files
+    try:
+        os.remove(train_dataset_txt)
+    except FileNotFoundError:
+        ...
+    try:
+        os.remove(test_dataset_txt)
+    except FileNotFoundError:
+        ...
+
     # split normal into train and test
-    _80 = int(len(normal) * 0.8)
+    _80 = int(len(normal) * train_split)
     train_split = normal[:_80]
     test_split = normal[_80:]
-    # random.seed(47)
-    # random.shuffle(abnormal)
 
     # copy abnormal files
-    copy_files(abnormal, src_dir, test_abnormal_path)
+    copy_files(abnormal, src_dir, test_abnormal_path, save_image, test_dataset_txt)
 
     # copy normal train files
-    copy_files(train_split, src_dir, train_normal_path)
+    copy_files(train_split, src_dir, train_normal_path, save_image, train_dataset_txt)
 
     # copy normal test files
-    copy_files(test_split, src_dir, test_normal_path)
-    print("Dataset created @", str(dataset_dir))
+    copy_files(test_split, src_dir, test_normal_path, save_image, test_dataset_txt)
+    if save_image:
+        print("Dataset saved @", str(dataset_dir))
+    print("Train dataset created @", str(train_dataset_txt))
+    print("Test dataset created @", str(test_dataset_txt))
 
 
 # create a dataset for SAGAN from ATZ
-img_root = pathlib.Path("/Users/soumen/Downloads/Datasets/Active Terahertz Imaging Dataset")
+img_root = pathlib.Path("/Users/soumen/Downloads/Datasets/ActiveTerahertzImagingDataset")
 voc_root = img_root / "THZ_dataset_det_VOC/Annotations"
 
 
@@ -84,7 +112,8 @@ def check_normal(path):
     return len(boxes) == 1
 
 
-opt = PreprocessOptions().parse()
-src = img_root / "THZ_dataset_det_VOC/JPEGImages"
-atz_sagan_data_dir = pathlib.Path(opt.save_path)
-create_dataset(src, atz_sagan_data_dir, check_normal, ablation=opt.ablation)
+if __name__ == '__main__':
+    opt = ATZPreprocessOptions().parse()
+    src = img_root / "THZ_dataset_det_VOC/JPEGImages"
+    atz_sagan_data_dir = pathlib.Path(opt.save_path)
+    create_dataset(src, atz_sagan_data_dir, check_normal, ablation=int(opt.ablation), save_image=opt.save_image)

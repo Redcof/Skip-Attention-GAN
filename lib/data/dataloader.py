@@ -6,11 +6,15 @@ LOAD DATA from file.
 
 ##
 import os
+import pathlib
 
 import pywt
+import torch
 from torchvision import transforms
 from torch.utils.data import DataLoader
 from torchvision.datasets import MNIST, CIFAR10, ImageFolder
+
+from customdataset.atzdataset import ATZDataset
 from lib.data.datasets import get_cifar_anomaly_dataset
 from lib.data.datasets import get_mnist_anomaly_dataset
 
@@ -62,18 +66,55 @@ def load_data(opt):
         train_ds = MNIST(root='./data', train=True, download=True, transform=transform)
         valid_ds = MNIST(root='./data', train=False, download=True, transform=transform)
         train_ds, valid_ds = get_mnist_anomaly_dataset(train_ds, valid_ds, int(opt.abnormal_class))
+    ## ATZ
+    elif opt.dataset in ['atz']:
+        dataroot = pathlib.Path("/Users/soumen/Desktop/Skip-Attention-GAN/")
+        d = {
+            128: "customdataset/patch_atz/atz_patch_dataset__3_128_36.csv",
+            64: "customdataset/patch_atz/atz_patch_dataset__3_64_119.csv"
+        }
+        patch_dataset_csv = str(dataroot / d[opt.isize])
+        train_dataset_txt = str(dataroot / "customdataset/atz/atz_dataset_train_ablation_5.txt")
+        test_dataset_txt = str(dataroot / "customdataset/atz/atz_dataset_test_ablation_5.txt")
+        iou_threshold = 0.0
+        patchsize = opt.isize
+        intersection = patchsize ** 2
 
-    # FOLDER
-    else:
         def wavelet_transform(x):
             # https://www.mathworks.com/help/wavelet/referencelist.html?type=function&category=denoising&s_tid=CRUX_topnav
             #
             w = pywt.Wavelet('bior4.4')
             return x
 
+        def label_transform(label, anomaly_size_px):
+            """ This label transform is designed for SAGAN.
+            Return 0 for normal images and 1 for abnormal images """
+            normal = 0
+            abnormal = 1
+            # whole patch is intersection
+            # anomalous region is considered as union
+            iou = intersection / (anomaly_size_px + 1e-20)
+
+            if (label in ["NORMAL0", "NORMAL1"]
+                    or anomaly_size_px == 0
+                    # not in iou range
+                    or not (1 >= iou >= iou_threshold)):
+                return torch.tensor(normal, dtype=torch.uint8)
+            else:
+                return torch.tensor(abnormal, dtype=torch.uint8)
+
+        transform = transforms.Compose([transforms.Resize((opt.isize, opt.isize)),
+                                        transforms.ToTensor(),
+                                        transforms.Normalize((0.5,), (0.5,)), ])
+
+        train_ds = ATZDataset(patch_dataset_csv, train_dataset_txt, opt.dataroot, transform,
+                              label_transform, wavelet_transform)
+        valid_ds = ATZDataset(patch_dataset_csv, test_dataset_txt, opt.dataroot, transform,
+                              label_transform, wavelet_transform)
+    # FOLDER
+    else:
         transform = transforms.Compose([transforms.Resize((opt.isize, opt.isize)),
                                         transforms.CenterCrop(opt.isize),
-                                        transforms.Lambda(wavelet_transform),
                                         transforms.ToTensor(),
                                         transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)), ])
 

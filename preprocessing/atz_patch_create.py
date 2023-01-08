@@ -29,7 +29,7 @@ root = pathlib.Path("/Users/soumen/Downloads/Datasets/Active Terahertz Imaging D
 image_root = root / "THZ_dataset_det_VOC/JPEGImages"
 voc_root = root / "THZ_dataset_det_VOC/Annotations"
 display = False  # display plots
-dataset_save_path = pathlib.Path("./patch_atz")
+dataset_save_path = pathlib.Path("../customdataset/patch_atz")
 patch_size = 64  # 64, 128
 
 # create save directory

@@ -13,7 +13,7 @@ import torch
 
 # pylint: disable=C0103,C0301,R0903,W0622
 
-class PreprocessOptions:
+class ATZPreprocessOptions:
     """Options class
 
     Returns:
@@ -28,8 +28,10 @@ class PreprocessOptions:
         ##
         # Base
         default_save = "/Users/soumen/Desktop/Skip-Attention-GAN/customdataset/atz"
+        self.parser.add_argument('--ablation', default=0,
+                                 help='Number of "abnormal" images required in the dataset. normal=abnormal*2')
         self.parser.add_argument('--save_path', default=default_save, help='path to prepare and save the data')
-        self.parser.add_argument('--ablation', action='store_true', default=True,
+        self.parser.add_argument('--save_image', action='store_true', default=False,
                                  help='Create a small dataset for ablation study')
         self.opt = None
 
