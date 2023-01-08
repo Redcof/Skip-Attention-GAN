@@ -2,7 +2,7 @@ import xml.etree.ElementTree as ET
 from io import StringIO, BytesIO
 
 
-def read_content(xml_file: str):
+def read_vocxml_content(xml_file: str):
     tree = ET.parse(xml_file)
     root = tree.getroot()
 

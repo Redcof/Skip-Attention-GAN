@@ -7,7 +7,7 @@ import cv2
 import matplotlib.pyplot as plt
 
 from preprocess_options import PreprocessOptions
-from preprocessing.utils import read_content
+from preprocessing.utils import read_vocxml_content
 
 
 def copy_files(files, src_root, dest_root):
@@ -80,7 +80,7 @@ voc_root = img_root / "THZ_dataset_det_VOC/Annotations"
 def check_normal(path):
     global voc_root
     voc = voc_root / path.replace(".jpg", ".xml")
-    name, boxes = read_content(voc)
+    name, boxes = read_vocxml_content(voc)
     return len(boxes) == 1
 
 
