@@ -1,3 +1,6 @@
+# script running guide
+# sh train.sh abstudy_6_128x128_20230108 "/Users/soumen/Downloads/Datasets/ActiveTerahertzImagingDataset/THZ_dataset_det_VOC/JPEGImages"
+
 # start visdom in a separate terminal
 #visdom
 
@@ -13,10 +16,10 @@ python preprocessing/split_atz.py --ablation 5
 python train.py \
   --phase train \
   \
-  --name abstudy_5_128x128_20230108 \
+  --name $1 \
   --model skipattentionganomaly \
   \
-  --dataroot "/Users/soumen/Downloads/Datasets/ActiveTerahertzImagingDataset/THZ_dataset_det_VOC/JPEGImages" \
+  --dataroot $2 \
   --manualseed 47 \
   --dataset atz \
   \
