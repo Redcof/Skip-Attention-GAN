@@ -6,8 +6,8 @@
 
 # =-=-=-=-=-=-=-=-=-=-
 export PYTHONPATH="$PYTHONPATH:$(pwd)/preprocessing"
-# ablation study
-python preprocessing/split_atz.py --ablation 5
+## ablation study
+#python preprocessing/split_atz.py --ablation 5
 
 # full data experiment
 # python preprocessing/split_atz.py
