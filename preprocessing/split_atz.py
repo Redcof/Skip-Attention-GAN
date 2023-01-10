@@ -22,7 +22,11 @@ def copy_files(files, src_root, dest_root, save_image, txt_file):
             fp.write("%s\n" % im_name)
 
 
-def create_dataset(src_dir, dataset_dir, is_normal, ablation=0, save_image=False, train_split=0.8):
+def create_dataset(src_dir, dataset_dir, is_normal_func, opt):
+    ablation = opt.ablation
+    train_split = opt.train_split
+    save_image = opt.save_image
+    filelist_path = opt.filelist
     train_normal_path = dataset_dir / "train" / "0.normal"
     test_normal_path = dataset_dir / "test" / "0.normal"
     test_abnormal_path = dataset_dir / "test" / "1.abnormal"
@@ -41,7 +45,15 @@ def create_dataset(src_dir, dataset_dir, is_normal, ablation=0, save_image=False
         os.makedirs(str(test_abnormal_path))
 
     # list images
-    files = os.listdir(str(src_dir))
+    if filelist_path is None:
+        files = os.listdir(str(src_dir))
+    else:
+        with open(filelist_path, "r") as fp:
+            files = [fname.strip() for fname in fp.readlines()]
+
+    # random shuffle
+    random.seed(47)  # setting seed for reproducibility
+    random.shuffle(files)
 
     # select image and annotation
     normal = []
@@ -49,15 +61,15 @@ def create_dataset(src_dir, dataset_dir, is_normal, ablation=0, save_image=False
 
     # separate files into normal and abnormal
     for image_name in files:
-        if is_normal(image_name):
+        if is_normal_func(image_name):
             normal.append(image_name)
         else:
             abnormal.append(image_name)
 
     # shuffle filenames
-    random.seed(47)
+    random.seed(47)  # setting seed for reproducibility
     random.shuffle(normal)
-    random.seed(47)
+    random.seed(47)  # setting seed for reproducibility
     random.shuffle(abnormal)
 
     if ablation > 0:
@@ -116,4 +128,4 @@ if __name__ == '__main__':
     opt = ATZPreprocessOptions().parse()
     src = img_root / "THZ_dataset_det_VOC/JPEGImages"
     atz_sagan_data_dir = pathlib.Path(opt.save_path)
-    create_dataset(src, atz_sagan_data_dir, check_normal, ablation=int(opt.ablation), save_image=opt.save_image)
+    create_dataset(src, atz_sagan_data_dir, check_normal, opt)

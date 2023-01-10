@@ -35,7 +35,7 @@ class Options:
         self.parser.add_argument('--batchsize', type=int, default=32, help='input batch size')
         self.parser.add_argument('--workers', type=int, help='number of data loading workers', default=8)
         self.parser.add_argument('--droplast', action='store_true', default=True, help='Drop last batch size.')
-        self.parser.add_argument('--isize', type=int, default=256, help='input image size.')
+        self.parser.add_argument('--isize', type=int, default=128, help='input image size.')
         self.parser.add_argument('--nc', type=int, default=3, help='input image channels')
         self.parser.add_argument('--nz', type=int, default=100, help='size of the latent z vector')
         self.parser.add_argument('--ngf', type=int, default=64)
@@ -81,6 +81,11 @@ class Options:
         self.parser.add_argument('--lr_policy', type=str, default='lambda', help='lambda|step|plateau')
         self.parser.add_argument('--lr_decay_iters', type=int, default=50,
                                  help='multiply by a gamma every lr_decay_iters iterations')
+        # ATZ dataset
+        self.parser.add_argument('--atz_patch_db', default="", help='csv file path for atz patch dataset')
+        self.parser.add_argument('--atz_train_txt', default="", help='text file path for atz train file dataset')
+        self.parser.add_argument('--atz_test_txt', default="", help='text file path for atz train file dataset')
+
         self.isTrain = True
         self.opt = None
 

@@ -68,17 +68,31 @@ def load_data(opt):
         train_ds, valid_ds = get_mnist_anomaly_dataset(train_ds, valid_ds, int(opt.abnormal_class))
     ## ATZ
     elif opt.dataset in ['atz']:
+        assert os.path.exists(opt.atz_patch_db)  # mandatory for ATZ
+        assert os.path.exists(opt.atz_test_txt)  # mandatory for ATZ
+        assert os.path.exists(opt.atz_train_txt)  # mandatory for ATZ
+
+        # dataroot = pathlib.Path("/Users/soumen/Desktop/Skip-Attention-GAN/")
+        # d = {
+        #     128: "customdataset/patch_atz/atz_patch_dataset__3_128_36.csv",
+        #     64: "customdataset/patch_atz/atz_patch_dataset__3_64_119.csv"
+        # }
+        # patch_dataset_csv = str(dataroot / d[opt.isize])
+        # train_dataset_txt = str(dataroot / "customdataset/atz/atz_dataset_train_ablation_5.txt")
+        # test_dataset_txt = str(dataroot / "customdataset/atz/atz_dataset_test_ablation_5.txt")
+
         dataroot = pathlib.Path("/Users/soumen/Desktop/Skip-Attention-GAN/")
         d = {
             128: "customdataset/patch_atz/atz_patch_dataset__3_128_36.csv",
             64: "customdataset/patch_atz/atz_patch_dataset__3_64_119.csv"
         }
-        patch_dataset_csv = str(dataroot / d[opt.isize])
-        train_dataset_txt = str(dataroot / "customdataset/atz/atz_dataset_train_ablation_5.txt")
-        test_dataset_txt = str(dataroot / "customdataset/atz/atz_dataset_test_ablation_5.txt")
-        iou_threshold = 0.0
+        patch_dataset_csv = opt.atz_patch_db
+        train_dataset_txt = opt.atz_test_txt
+        test_dataset_txt = opt.atz_train_txt
+
+        object_area_threshold = 0.05  # 05%
         patchsize = opt.isize
-        intersection = patchsize ** 2
+        PATCH_AREA = patchsize ** 2
 
         def wavelet_transform(x):
             # https://www.mathworks.com/help/wavelet/referencelist.html?type=function&category=denoising&s_tid=CRUX_topnav
@@ -91,14 +105,13 @@ def load_data(opt):
             Return 0 for normal images and 1 for abnormal images """
             normal = 0
             abnormal = 1
-            # whole patch is intersection
-            # anomalous region is considered as union
-            iou = intersection / (anomaly_size_px + 1e-20)
+            # object area in patch must be bigger than some threshold
+            object_area_percent = PATCH_AREA / (anomaly_size_px + 1e-20)
 
             if (label in ["NORMAL0", "NORMAL1"]
                     or anomaly_size_px == 0
                     # not in iou range
-                    or not (1 >= iou >= iou_threshold)):
+                    or not (1 >= object_area_percent >= object_area_threshold)):
                 return torch.tensor(normal, dtype=torch.uint8)
             else:
                 return torch.tensor(abnormal, dtype=torch.uint8)
@@ -122,7 +135,7 @@ def load_data(opt):
         valid_ds = ImageFolder(os.path.join(opt.dataroot, 'test'), transform)
 
     ## DATALOADER
-    train_dl = DataLoader(dataset=train_ds, batch_size=opt.batchsize, shuffle=True, drop_last=True)
+    train_dl = DataLoader(dataset=train_ds, batch_size=opt.batchsize, shuffle=False, drop_last=True)
     valid_dl = DataLoader(dataset=valid_ds, batch_size=opt.batchsize, shuffle=False, drop_last=False)
 
     return Data(train_dl, valid_dl)

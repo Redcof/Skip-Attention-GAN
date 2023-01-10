@@ -26,6 +26,9 @@ class ATZDataset(Dataset):
         if len(file_names) > 0:
             # filter dataframe
             self.df = self.df[self.df["image"].isin(file_names)]
+        # shuffle dataframe
+        self.df = self.df.sample(frac=1, random_state=47)
+
         self.img_dir = img_dir
         self.transform = transform
         self.target_transform = label_transform
