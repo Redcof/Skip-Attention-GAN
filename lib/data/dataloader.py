@@ -81,11 +81,6 @@ def load_data(opt):
         # train_dataset_txt = str(dataroot / "customdataset/atz/atz_dataset_train_ablation_5.txt")
         # test_dataset_txt = str(dataroot / "customdataset/atz/atz_dataset_test_ablation_5.txt")
 
-        dataroot = pathlib.Path("/Users/soumen/Desktop/Skip-Attention-GAN/")
-        d = {
-            128: "customdataset/patch_atz/atz_patch_dataset__3_128_36.csv",
-            64: "customdataset/patch_atz/atz_patch_dataset__3_64_119.csv"
-        }
         patch_dataset_csv = opt.atz_patch_db
         train_dataset_txt = opt.atz_test_txt
         test_dataset_txt = opt.atz_train_txt

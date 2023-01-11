@@ -92,6 +92,10 @@ class Options:
     def parse(self):
         """ Parse Arguments.
         """
+        cuda_available = torch.cuda.is_available()
+        cuda_count = torch.cuda.device_count()
+        cuda_current = torch.cuda.current_device()
+        print("CUDA Info", cuda_available, cuda_count, cuda_current)
 
         self.opt = self.parser.parse_args()
         self.opt.isTrain = self.isTrain  # train or test
