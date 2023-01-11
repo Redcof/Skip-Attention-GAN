@@ -6,7 +6,9 @@ import random
 
 import PIL
 import cv2
+import numpy as np
 import pandas as pd
+import torch
 from PIL import Image
 from matplotlib import pyplot as plt
 from torch.utils.data import Dataset
@@ -18,46 +20,61 @@ class ATZDataset(Dataset):
     NORMAL = 0
     ABNORMAL = 1
 
-    def __init__(self, atz_patch_dataset_csv, atz_dataset_train_or_test_txt, img_dir, mode, transform=None,
-                 label_transform=None, device="cpu", wavelet_transform=lambda x: x):
-        self.mode = mode
+    def __init__(self, atz_patch_dataset_csv, img_dir, phase, atz_dataset_train_or_test_txt=None, transform=None,
+                 classes=(), subjects=(), ablation=0, label_transform=None, device="cpu",
+                 wavelet_transform=lambda x: x, random_state=47):
+        if subjects is None:
+            subjects = []
+        self.phase = phase
         if label_transform is None:
-            label_transform = self.label_transform
+            label_transform = self.label_transform_default
+        self.label_transform = label_transform
         self.img_dir = img_dir
         self.transform = transform
-        self.target_transform = label_transform
         # each key: image name, value: transformed image data
         self.cache_image = defaultdict(lambda: None)  # process optimization
         self.one_image_size = 0  # bytes
         self.device = device
         self.wavelet_transform = wavelet_transform
 
-        def _lambda(*args, **kwargs):
-            return self.label_transform(*args, **kwargs)
+        def _lambda(record, **kwargs):
+            return self.label_transform(record.image, record.label_txt, record.anomaly_size)
 
         # read trainable/testable files names for the experiment
-        with open(atz_dataset_train_or_test_txt, "r") as fp:
-            file_names = [line.strip() for line in fp.readlines()]
+        file_names = []
+        if atz_dataset_train_or_test_txt:
+            with open(atz_dataset_train_or_test_txt, "r") as fp:
+                file_names = [line.strip() for line in fp.readlines()]
         self.df = pd.read_csv(atz_patch_dataset_csv)
-        if len(file_names) > 0:
+        if file_names:
             # filter dataframe
             self.df = self.df[self.df["image"].isin(file_names)]
+        if classes:
+            self.df = self.df[self.df['label_txt'].isin(classes)]
+        if subjects:
+            self.df = self.df[self.df['subject_id'].isin(subjects)]
         # shuffle dataframe
-        self.df = self.df.sample(frac=1, random_state=47)
+        self.df = self.df.sample(frac=1, random_state=random_state)
+        if ablation:
+            if self.phase == "train":
+                self.df = self.df[(self.df['threat_present'] == 0) &
+                                  (self.df['anomaly_size'] == 0)].sample(ablation, random_state=random_state)
+            elif self.phase == "test":
+                self.df = self.df[(self.df['threat_present'] == 1) &
+                                  (self.df['anomaly_size'] > 0)].sample(ablation, random_state=random_state)
         # perform label-transform
-        self.df['is_anamoly'] = self.df[['label', 'anomaly_size']].apply(self._lambda, axis=1)
-        abnormals = np.sum(self.df['is_anamoly'])
-        print("%s => Normal:Abnormal = %d:%d" % (self.mode, len(self) - abnormals, abnormals))
+        self.df['is_anamoly'] = self.df[['image', 'label_txt', 'anomaly_size']].apply(_lambda, axis=1)
+        abnormal_count = np.sum(self.df['is_anamoly'])
+        msg = "Mode %s => Normal:Abnormal = %d:%d" % (self.phase, len(self) - abnormal_count, abnormal_count)
+        print(msg)
         # debug check
-        if self.mode == "train":
-            if abnormals > 0:
-                print("Abnormal data not allowed in train dataset.")
-        if self.mode == "test":
-            if abnormals == 0:
-                print("No abnormal data found in test test")
+        if self.phase == "train":
+            assert abnormal_count == 0, "%s\nAbnormal data not allowed in train dataset." % msg
+        if self.phase == "test":
+            assert abnormal_count != 0, "%s\nNo abnormal data found in test test" % msg
 
     @staticmethod
-    def label_transform(label, anomaly_size_px):
+    def label_transform_default(image, label, anomaly_size_px):
         """ This label transform is designed for SAGAN.
         Return 0 for normal images and 1 for abnormal images """
 
@@ -75,9 +92,9 @@ class ATZDataset(Dataset):
         record = self.df.iloc[idx, :]
         # read metadata
         current_file = record[["image"]].values[0]
-        label = record[["label"]].values[0]
+        # label_txt = record[["label_txt"]].values[0]
         x1, x2, y1, y2 = ast.literal_eval(record[["x1x2y1y2"]].values[0])
-        anomaly_size = record[["anomaly_size"]].values[0]
+        # anomaly_size = record[["anomaly_size"]].values[0]
         label = record[["is_anamoly"]].values[0]
 
         # read image from cache

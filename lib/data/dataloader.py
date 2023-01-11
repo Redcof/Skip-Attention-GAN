@@ -5,6 +5,7 @@ LOAD DATA from file.
 # pylint: disable=C0301,E1101,W0622,C0103,R0902,R0915
 
 ##
+import ast
 import os
 import pathlib
 
@@ -69,8 +70,8 @@ def load_data(opt):
     ## ATZ
     elif opt.dataset in ['atz']:
         assert os.path.exists(opt.atz_patch_db)  # mandatory for ATZ
-        assert os.path.exists(opt.atz_test_txt)  # mandatory for ATZ
-        assert os.path.exists(opt.atz_train_txt)  # mandatory for ATZ
+        # assert os.path.exists(opt.atz_test_txt)  # mandatory for ATZ
+        # assert os.path.exists(opt.atz_train_txt)  # mandatory for ATZ
 
         # dataroot = pathlib.Path("/Users/soumen/Desktop/Skip-Attention-GAN/")
         # d = {
@@ -82,10 +83,23 @@ def load_data(opt):
         # test_dataset_txt = str(dataroot / "customdataset/atz/atz_dataset_test_ablation_5.txt")
 
         patch_dataset_csv = opt.atz_patch_db
-        train_dataset_txt = opt.atz_test_txt
-        test_dataset_txt = opt.atz_train_txt
+        train_dataset_txt = opt.atz_train_txt
+        test_dataset_txt = opt.atz_test_txt
+        atz_ablation = opt.atz_ablation
 
-        object_area_threshold = 0.05  # 05%
+        NORMAL_CLASSES = ["NORMAL0", "NORMAL1"]
+        try:
+            atz_classes = ast.literal_eval(opt.atz_classes)
+        except ValueError:
+            atz_classes = []
+        atz_classes.extend(NORMAL_CLASSES)
+
+        try:
+            atz_subjects = ast.literal_eval(opt.atz_subjects)
+        except ValueError:
+            atz_subjects = []
+
+        object_area_threshold = opt.area_threshold  # 10%
         patchsize = opt.isize
         PATCH_AREA = patchsize ** 2
 
@@ -95,15 +109,18 @@ def load_data(opt):
             w = pywt.Wavelet('bior4.4')
             return x
 
-        def label_transform(label, anomaly_size_px):
+        def label_transform(image, label, anomaly_size_px):
             """ This label transform is designed for SAGAN.
             Return 0 for normal images and 1 for abnormal images """
             normal = 0
             abnormal = 1
             # object area in patch must be bigger than some threshold
-            object_area_percent = PATCH_AREA / (anomaly_size_px + 1e-20)
+            if anomaly_size_px > 0:
+                object_area_percent = anomaly_size_px / PATCH_AREA
+            else:
+                object_area_percent = 0
 
-            if (label in ["NORMAL0", "NORMAL1"]
+            if (label in NORMAL_CLASSES
                     or anomaly_size_px == 0
                     # not in iou range
                     or not (1 >= object_area_percent >= object_area_threshold)):
@@ -115,10 +132,24 @@ def load_data(opt):
                                         transforms.ToTensor(),
                                         transforms.Normalize((0.5,), (0.5,)), ])
 
-        train_ds = ATZDataset(patch_dataset_csv, train_dataset_txt, opt.dataroot, transform,
-                              label_transform, wavelet_transform)
-        valid_ds = ATZDataset(patch_dataset_csv, test_dataset_txt, opt.dataroot, transform,
-                              label_transform, wavelet_transform)
+        train_ds = ATZDataset(patch_dataset_csv, opt.dataroot, "train",
+                              atz_dataset_train_or_test_txt=train_dataset_txt,
+                              classes=atz_classes,
+                              subjects=atz_subjects,
+                              ablation=atz_ablation,
+                              transform=transform,
+                              random_state=opt.manualseed,
+                              label_transform=label_transform,
+                              wavelet_transform=wavelet_transform)
+        valid_ds = ATZDataset(patch_dataset_csv, opt.dataroot, "test",
+                              atz_dataset_train_or_test_txt=test_dataset_txt,
+                              classes=atz_classes,
+                              subjects=atz_subjects,
+                              ablation=atz_ablation,
+                              transform=transform,
+                              random_state=opt.manualseed,
+                              label_transform=label_transform,
+                              wavelet_transform=wavelet_transform)
     # FOLDER
     else:
         transform = transforms.Compose([transforms.Resize((opt.isize, opt.isize)),

@@ -61,11 +61,11 @@ class Options:
         ##
         # Train
         self.parser.add_argument('--print_freq', type=int, default=100,
-                                 help='frequency of showing training results on console')
+                                 help='frequency of showing training results on console (per image).')
         self.parser.add_argument('--save_image_freq', type=int, default=100,
-                                 help='frequency of saving real and fake images')
+                                 help='frequency of saving real and fake images (per image).')
         self.parser.add_argument('--save_test_images', default='true', action='store_true',
-                                 help='Save test images for demo.')
+                                 help='Save test images for demo (per image).')
         self.parser.add_argument('--load_weights', action='store_true', help='Load the pretrained weights')
         self.parser.add_argument('--resume', default='', help="path to checkpoints (to continue training)")
         self.parser.add_argument('--phase', type=str, default='train', help='train, val, test, etc')
@@ -82,9 +82,21 @@ class Options:
         self.parser.add_argument('--lr_decay_iters', type=int, default=50,
                                  help='multiply by a gamma every lr_decay_iters iterations')
         # ATZ dataset
-        self.parser.add_argument('--atz_patch_db', default="", help='csv file path for atz patch dataset')
-        self.parser.add_argument('--atz_train_txt', default="", help='text file path for atz train file dataset')
-        self.parser.add_argument('--atz_test_txt', default="", help='text file path for atz train file dataset')
+        self.parser.add_argument('--atz_patch_db', default="", help='required. csv file path for atz patch dataset')
+        self.parser.add_argument('--atz_train_txt', default=None, help='optional. text file path for atz '
+                                                                       'train file dataset')
+        self.parser.add_argument('--atz_test_txt', default=None,
+                                 help='optional. text file path for atz train file dataset')
+        self.parser.add_argument('--atz_classes', default=[], help='Specify a list of classes for experiment.'
+                                                                   'Example: ["KK", "CK", "CL"]')
+        self.parser.add_argument('--atz_subjects', default=[], help='Specify a list of subjects for experiment.'
+                                                                    'Example: ["F1", "M1", "F2"]')
+        self.parser.add_argument('--area_threshold', default=0.1, type=float,
+                                 help='Object area threshold in percent to consider the patch as anomaly or not.'
+                                      'Values between 0 and 1. where 0 is 0%, 1 is 100%, and 0.5 is 50% and so on.'
+                                      'Default: 10% or 0.1')
+        self.parser.add_argument('--atz_ablation', default=0, type=int,
+                                 help='Used for ablation experiment. Patches with [no-threat:threat=n:n].')
 
         self.isTrain = True
         self.opt = None
@@ -94,8 +106,8 @@ class Options:
         """
         cuda_available = torch.cuda.is_available()
         cuda_count = torch.cuda.device_count()
-        cuda_current = torch.cuda.current_device()
-        print("CUDA Info", cuda_available, cuda_count, cuda_current)
+        # cuda_current = torch.cuda.current_device()
+        print("CUDA Info", cuda_available, cuda_count)
 
         self.opt = self.parser.parse_args()
         self.opt.isTrain = self.isTrain  # train or test
@@ -134,9 +146,15 @@ class Options:
         if not os.path.isdir(test_dir):
             os.makedirs(test_dir)
 
+        from datetime import datetime
+
+        # datetime object containing current date and time
+        now = datetime.now()
+        dt_string = now.strftime("Start: %d/%m/%Y %H:%M:%S")
         file_name = os.path.join(expr_dir, 'opt.txt')
         with open(file_name, 'wt') as opt_file:
             opt_file.write('------------ Options -------------\n')
+            opt_file.write('%s\n' % dt_string)
             for k, v in sorted(args.items()):
                 opt_file.write('%s: %s\n' % (str(k), str(v)))
             opt_file.write('-------------- End ----------------\n')

@@ -11,6 +11,7 @@ TRAIN SKIP-ATTENTION GANOMALY
 
 ##
 # LIBRARIES
+from datetime import datetime
 
 from options import Options
 from lib.data.dataloader import load_data
@@ -28,8 +29,14 @@ def main():
     data = load_data(opt)
     # Load Model
     model = load_model(opt, data)
+    now = datetime.now()
+    dt_string1 = now.strftime("Start: %d/%m/%Y %H:%M:%S")
     # Train Model
     model.train()
+    now = datetime.now()
+    dt_string = now.strftime("Start: %d/%m/%Y %H:%M:%S")
+    print("Start:", dt_string1)
+    print("End:", dt_string)
 
 
 if __name__ == '__main__':

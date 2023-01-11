@@ -8,7 +8,7 @@ import cv2
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 
-from preprocessing.utils import read_vocxml_content
+from preprocessing.utils import read_vocxml_content, parsing_filename
 
 class_name_dict = dict(KK="Kitchen Knife", GA="Gun", MD="Metal Dagger",
                        SS="Scissors", WB="Water Bottle", CK="Ceramic Knife",
@@ -25,12 +25,12 @@ atz_classes = ["NORMAL0", "NORMAL1", "HUMAN",
 # in that list will be ignored during dataset creation, set -1 to consider all classes
 atz_ignore_cls_idx_lim = atz_classes.index("HUMAN")
 
-root = pathlib.Path("/Users/soumen/Downloads/Datasets/Active Terahertz Imaging Dataset")
+root = pathlib.Path("/Users/soumen/Downloads/Datasets/ActiveTerahertzImagingDataset")
 image_root = root / "THZ_dataset_det_VOC/JPEGImages"
 voc_root = root / "THZ_dataset_det_VOC/Annotations"
 display = False  # display plots
-dataset_save_path = pathlib.Path("../customdataset/patch_atz")
-patch_size = 64  # 64, 128
+dataset_save_path = pathlib.Path("../customdataset/atz")
+patch_size = 128  # 64, 128
 
 # create save directory
 patch_image_save_path = dataset_save_path / "images"
@@ -47,8 +47,14 @@ def create_patch_dataset():
     for image_name in tqdm(image_files):
         if not any([c in image_name for c in atz_classes[atz_ignore_cls_idx_lim + 1:]]):
             continue
-        # image_name = "S_P_M5_MD_F_W_SS_V_W_back_0906085926.jpg"
+        # image_name = 'S_P_F1_WB_F_LL_CK_V_LL_back_0907094821.jpg'
         voc_xml = voc_root / image_name.replace(".jpg", ".xml")
+        base, data = parsing_filename(str(voc_root), image_name.replace(".jpg", ".xml"))
+
+        subject_gender = base['subject_gender']
+        subject_id = base['subject_id']
+        threat_present = base['presence']
+        front_back = base['front_back']
 
         # read annotation
         name, boxes = read_vocxml_content(str(voc_xml))
@@ -58,18 +64,20 @@ def create_patch_dataset():
         # create a mask to store class info
         mask = np.zeros(img.shape)
         r, g, b = 255, 0, 0
+        box_dict = dict()
         # apply bbox and create mask
         for box_info in boxes:
-            xmin, ymin, xmax, ymax, cx, cy, class_ = box_info
-            cls_idx = atz_classes.index(class_)
-            if cls_idx <= atz_ignore_cls_idx_lim or class_ == "HUMAN":
+            xmin, ymin, xmax, ymax, cx, cy, label_txt = box_info
+            cls_idx = atz_classes.index(label_txt)
+            box_dict[label_txt] = xmin, ymin, xmax, ymax
+            if cls_idx <= atz_ignore_cls_idx_lim or label_txt == "HUMAN":
                 # ignore classes
                 continue
             mask[ymin:ymax + 1, xmin:xmax + 1] = cls_idx
             if display:
                 x, y, w, h = xmin, ymin, abs(xmax - xmin), abs(ymax - ymin)
                 img = cv2.rectangle(img, (x, y), (x + w, y + h), (r, g, b), 4)
-                print("boxes:", class_, atz_classes.index(class_))
+                print("boxes:", label_txt, atz_classes.index(label_txt))
 
         if display:
             # render image
@@ -77,28 +85,6 @@ def create_patch_dataset():
             cv2.imshow("mask", mask)
             print(np.unique(mask))
 
-        ## PATCHIFY
-        # # create patches
-        # patch_w, patch_h, step = 128, 128, (64, 64, 3)  # 67, 67, 30
-        # print((patch_w, patch_h, 3), step)
-        # patches = patchify(img, (patch_h, patch_w, 3), step=step)
-        # print(patches.shape, img.shape)
-        # rows = patches.shape[0]
-        # cols = patches.shape[1]
-        # plt.axis("off")
-        # for r in range(0, rows):
-        #     for c in range(0, cols):
-        #         idx = (r * cols + c + 1)
-        #         im = patches[r, c, 0, :, :]
-        #         ax = plt.subplot(rows, cols, idx)
-        #         ax.axis("off")
-        #         plt.imshow(cv2.cvtColor(im, cv2.COLOR_BGR2RGB))
-        #         # cv2.imshow("%d"%idx, im)
-        # plt.show()
-        # cv2.destroyAllWindows()
-
-        ## EMPatches
-        # load module
         emp = EMPatches()
         img_patches, indices = emp.extract_patches(img, patchsize=patch_size, overlap=0.2)
         mask_patches, _ = emp.extract_patches(mask, patchsize=patch_size, overlap=0.2)
@@ -106,27 +92,35 @@ def create_patch_dataset():
         cols = 4
         rows = len(img_patches) // cols + 1
         dictionary_ls = []
-        for idx, (img_p, mask_p, index) in enumerate(zip(img_patches, mask_patches, indices)):
+        for idx, (img_p, mask_p, patch_loc) in enumerate(zip(img_patches, mask_patches, indices)):
+            img_p = img_p.copy()
+            mask_p = mask_p.copy()
             # ignore a patch with all [black pixels]
             # img_p
             # create patch file name
-            patch_file_name = "%s.jpg" % image_name.replace(".jpg", "_%04d" % idx)
+            # patch_file_name = "%s.jpg" % image_name.replace(".jpg", "_%04d" % idx)
             # class label
             max_val = int(np.max(mask_p))
             class_index = max_val
+
             # class name
             label_txt = atz_classes[class_index]
-            # if class_index > 0: print(label_txt, class_index, idx, np.unique(mask_p))
-            # calculate IOU
-            # the entire patch is the union,
-            # and the masked area is intersection.
+            global_box = box_dict.get(label_txt, (0, 0, 0, 0))
             mask_p[mask_p > 0] = 1  # replace all non zeros with 1
-            # sum of 1s give mask area(the union).
-            union = np.sum(mask_p.flatten())
+            # object area in musk
+            obj_area_px = np.sum(mask_p.flatten())
 
+            dictionary = dict(image=image_name,
+                              threat_present=threat_present,
+                              front_back=front_back,
+                              patch_id=idx,
+                              label=class_index,
+                              label_txt=label_txt,
+                              global_x1y1x2y2=global_box,
+                              anomaly_size=obj_area_px, x1x2y1y2=patch_loc,
+                              subject_gender=subject_gender,
+                              subject_id="%s%s" % (subject_gender, subject_id))
             # prepare record
-            dictionary = dict(image=image_name, patch_id=idx, label=class_index,
-                              label_txt=label_txt, anomaly_size=union, x1x2y1y2=index)
             dictionary_ls.append(dictionary)
             # save image
             # cv2.imwrite(str(patch_image_save_path / patch_file_name), img_p)
@@ -154,7 +148,9 @@ def create_patch_dataset():
 
 
 if __name__ == '__main__':
-    create_patch_dataset()
+    for i in [128]:
+        patch_size = i
+        create_patch_dataset()
     if display:
         plt.show()
         cv2.destroyAllWindows()
