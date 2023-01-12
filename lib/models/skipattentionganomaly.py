@@ -257,7 +257,9 @@ class Skipattentionganomaly(BaseModel):
                 scores['scores'] = self.an_scores.cpu()
                 scores['labels'] = self.gt_labels.cpu()
                 hist = pd.DataFrame.from_dict(scores)
-                hist.to_csv("%s/%s/%shistogram.csv" % (self.opt.outf, self.opt.name, self.opt.phase))
+                file = "%s/%s/%shistogram.csv" % (self.opt.outf, self.name, self.opt.phase)
+                print("Saving histogram @: ", file)
+                hist.to_csv(file)
 
                 # Filter normal and abnormal scores.
                 abn_scr = hist.loc[hist.labels == 1]['scores']
@@ -267,6 +269,12 @@ class Skipattentionganomaly(BaseModel):
                 # fig, ax = plt.subplots(figsize=(4,4));
                 sns.histplot(nrm_scr, label=r'Normal Scores')
                 sns.histplot(abn_scr, label=r'Abnormal Scores')
+
+                # if self.opt.display_id > 0:
+                #     self.visualizer.plot_histogram(self.epoch, [
+                #         dict(data=nrm_scr, label="Normal Scores"),
+                #         dict(data=abn_scr, label="Abnormal Scores"),
+                #     ])
 
                 plt.legend()
                 plt.yticks([])

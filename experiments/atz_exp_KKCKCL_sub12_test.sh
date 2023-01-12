@@ -21,22 +21,21 @@ export DATA_ROOT="/mnt/c/Users/dndlssardar/Downloads/THZ_dataset_det_VOC/JPEGIma
 python train.py \
   --phase test \
   \
-  --name exp1_128x128_20230112 \
+  --name abl_128x128_20230112 \
   --model skipattentionganomaly \
   \
   --dataroot "$DATA_ROOT" \
   --dataset atz \
   --atz_patch_db customdataset/atz/atz_patch_dataset__3_128_36.csv \
   --area_threshold 0.1 \
-  --atz_subjects "['F1', 'M1', 'F2', 'M2']"  \
+  --atz_subjects "['F1', 'M1', 'F2', 'M2']" \
   --atz_classes '["KK", "CK", "CL"]' \
   --manualseed 47 \
   \
   --verbose \
-  --display \
   \
   --device gpu \
-  --gpu_ids "" \
+  --gpu_ids "[0,]" \
   \
   --isize 128 \
   --batchsize 32 \
@@ -45,8 +44,9 @@ python train.py \
   --niter 20 \
   --iter 0 \
   \
-  --save_image_freq 10 \
-  --print_freq 10
+  --save_image_freq 50 \
+  --print_freq 1\
+  --load_weights
 
 echo "Training done."
 date

@@ -120,6 +120,31 @@ class Visualizer():
             win=5
         )
 
+    def plot_histogram(self, epoch, data_list):
+        """ Plot performance
+
+        Args:
+            epoch (int): Current epoch
+            data_list (float): A list of dictionary. Dictionary has 2 keys, Data=List of numbers, Label=text to display
+        """
+        if not hasattr(self, 'plot_res') or self.plot_res is None:
+            self.plot_res = {'X': [], 'Y': [], 'legend': list(performance.keys())}
+        self.plot_res['X'].append(epoch + counter_ratio)
+        self.plot_res['Y'].append([performance[k] for k in self.plot_res['legend']])
+        self.vis.line(
+            X=np.stack([np.array(self.plot_res['X'])] * len(self.plot_res['legend']), 1),
+            Y=np.array(self.plot_res['Y']),
+            opts={
+                'title': self.name + 'Performance Metrics',
+                'legend': self.plot_res['legend'],
+                'numbins': 30,
+                'xlabel': 'Anomaly Score',
+                'ylabel': 'Frequency',
+                'layoutopts' : {'plotly': {'legend': {'x': 0, 'y': 0}}}
+            },
+            win=5
+        )
+
     ##
     def print_current_errors(self, epoch, errors):
         """ Print current errors.

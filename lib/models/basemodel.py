@@ -25,11 +25,13 @@ import matplotlib.pyplot as plt
 
 from PIL import Image
 
+
 # from lib import GradCAMplus
 
 class BaseModel():
     """ Base Model for ganomaly
     """
+
     def __init__(self, opt, data):
         ##
         # Seed for deterministic behavior
@@ -63,7 +65,7 @@ class BaseModel():
         torch.backends.cudnn.deterministic = True
 
     ##
-    def set_input(self, input:torch.Tensor, noise:bool=False):
+    def set_input(self, input: torch.Tensor, noise: bool = False):
         """ Set input and ground truth
 
         Args:
@@ -119,26 +121,28 @@ class BaseModel():
         return reals, fakes, fixed
 
     ##
-    def save_weights(self, epoch:int, is_best:bool=False):
+    def save_weights(self, epoch: int, is_best:bool = False):
         """Save netG and netD weights for the current epoch.
 
         Args:
             epoch ([int]): Current epoch number.
         """
 
-        weight_dir = os.path.join(
-            self.opt.outf, self.opt.name, 'train', 'weights')
+        weight_dir = os.path.join(self.opt.outf, self.opt.name, 'train', 'weights')
         if not os.path.exists(weight_dir):
             os.makedirs(weight_dir)
-
         if is_best:
             torch.save({'epoch': epoch, 'state_dict': self.netg.state_dict()}, f'{weight_dir}/netG_best.pth')
             torch.save({'epoch': epoch, 'state_dict': self.netd.state_dict()}, f'{weight_dir}/netD_best.pth')
+            print("Saving model checkpoint at: ", f'{weight_dir}/netG_best.pth')
+            # print("Saving model checkpoint at: ", f'{weight_dir}/netD_best.pth')
         else:
             torch.save({'epoch': epoch, 'state_dict': self.netd.state_dict()}, f"{weight_dir}/netD_{epoch}.pth")
             torch.save({'epoch': epoch, 'state_dict': self.netg.state_dict()}, f"{weight_dir}/netG_{epoch}.pth")
+            print("Saving model checkpoint at: ", f"{weight_dir}/netG_{epoch}.pth")
+            # print("Saving model checkpoint at: ", f"{weight_dir}/netD_{epoch}.pth")
 
-    def load_weights(self, epoch=None, is_best:bool=False, path=None):
+    def load_weights(self, epoch=None, is_best: bool = False, path=None):
         """ Load pre-trained weights of NetG and NetD
 
         Keyword Arguments:
@@ -202,7 +206,7 @@ class BaseModel():
                 if self.opt.display:
                     self.visualizer.display_current_images(reals, fakes, fixed)
 
-        print(">> Training model %s. Epoch %d/%d" % (self.name, self.epoch+1, self.opt.niter))
+        print(">> Training model %s. Epoch %d/%d" % (self.name, self.epoch + 1, self.opt.niter))
 
     ##
     def train(self):
@@ -251,9 +255,11 @@ class BaseModel():
 
             # Create big error tensor for the test set.
             self.an_scores = torch.zeros(size=(len(self.data.valid.dataset),), dtype=torch.float32, device=self.device)
-            self.gt_labels = torch.zeros(size=(len(self.data.valid.dataset),), dtype=torch.long,    device=self.device)
-            self.latent_i  = torch.zeros(size=(len(self.data.valid.dataset), self.opt.nz), dtype=torch.float32, device=self.device)
-            self.latent_o  = torch.zeros(size=(len(self.data.valid.dataset), self.opt.nz), dtype=torch.float32, device=self.device)
+            self.gt_labels = torch.zeros(size=(len(self.data.valid.dataset),), dtype=torch.long, device=self.device)
+            self.latent_i = torch.zeros(size=(len(self.data.valid.dataset), self.opt.nz), dtype=torch.float32,
+                                        device=self.device)
+            self.latent_o = torch.zeros(size=(len(self.data.valid.dataset), self.opt.nz), dtype=torch.float32,
+                                        device=self.device)
 
             # print("   Testing model %s." % self.name)
             self.times = []
@@ -266,13 +272,17 @@ class BaseModel():
                 self.set_input(data)
                 self.fake, latent_i, latent_o = self.netg(self.input)
 
-                error = torch.mean(torch.pow((latent_i-latent_o), 2), dim=1)
+                error = torch.mean(torch.pow((latent_i - latent_o), 2), dim=1)
                 time_o = time.time()
 
-                self.an_scores[i*self.opt.batchsize : i*self.opt.batchsize+error.size(0)] = error.reshape(error.size(0))
-                self.gt_labels[i*self.opt.batchsize : i*self.opt.batchsize+error.size(0)] = self.gt.reshape(error.size(0))
-                self.latent_i [i*self.opt.batchsize : i*self.opt.batchsize+error.size(0), :] = latent_i.reshape(error.size(0), self.opt.nz)
-                self.latent_o [i*self.opt.batchsize : i*self.opt.batchsize+error.size(0), :] = latent_o.reshape(error.size(0), self.opt.nz)
+                self.an_scores[i * self.opt.batchsize: i * self.opt.batchsize + error.size(0)] = error.reshape(
+                    error.size(0))
+                self.gt_labels[i * self.opt.batchsize: i * self.opt.batchsize + error.size(0)] = self.gt.reshape(
+                    error.size(0))
+                self.latent_i[i * self.opt.batchsize: i * self.opt.batchsize + error.size(0), :] = latent_i.reshape(
+                    error.size(0), self.opt.nz)
+                self.latent_o[i * self.opt.batchsize: i * self.opt.batchsize + error.size(0), :] = latent_o.reshape(
+                    error.size(0), self.opt.nz)
 
                 self.times.append(time_o - time_i)
 
@@ -282,15 +292,16 @@ class BaseModel():
                     if not os.path.isdir(dst):
                         os.makedirs(dst)
                         real, fake, _ = self.get_current_images()
-                        vutils.save_image(real, '%s/real_%03d.eps' % (dst, i+1), normalize=True)
-                        vutils.save_image(fake, '%s/fake_%03d.eps' % (dst, i+1), normalize=True)
+                        vutils.save_image(real, '%s/real_%03d.eps' % (dst, i + 1), normalize=True)
+                        vutils.save_image(fake, '%s/fake_%03d.eps' % (dst, i + 1), normalize=True)
 
                         # Measure inference time.
                         self.times = np.array(self.times)
                         self.times = np.mean(self.times[:100] * 1000)
 
                         # Scale error vector between [0, 1]
-            self.an_scores = (self.an_scores - torch.min(self.an_scores)) / (torch.max(self.an_scores) - torch.min(self.an_scores))
+            self.an_scores = (self.an_scores - torch.min(self.an_scores)) / (
+                    torch.max(self.an_scores) - torch.min(self.an_scores))
             auc = evaluate(self.gt_labels, self.an_scores, metric=self.opt.metric)
             performance = OrderedDict([('Avg Run Time (ms/batch)', self.times), ('AUC', auc)])
 
@@ -303,8 +314,8 @@ class BaseModel():
         def update_learning_rate(self):
             """ Update learning rate based on the rule provided in options.
             """
-    
+
             for scheduler in self.schedulers:
                 scheduler.step()
             lr = self.optimizers[0].param_groups[0]['lr']
-            print('   LR = %.7f' % lr)        
+            print('   LR = %.7f' % lr)
