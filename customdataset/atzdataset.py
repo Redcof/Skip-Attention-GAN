@@ -50,7 +50,10 @@ class ATZDataset(Dataset):
             # filter dataframe
             self.df = self.df[self.df["image"].isin(file_names)]
         if classes:
-            self.df = self.df[self.df['label_txt'].isin(classes)]
+            if phase == "test":
+                self.df = self.df[self.df['label_txt'].isin(classes)]
+            elif phase == "train":
+                self.df = self.df[self.df['label_txt'].isin(["NORMAL0", "NORMAL1"])]
         if subjects:
             self.df = self.df[self.df['subject_id'].isin(subjects)]
         # shuffle dataframe
@@ -65,7 +68,7 @@ class ATZDataset(Dataset):
         # perform label-transform
         self.df['is_anamoly'] = self.df[['image', 'label_txt', 'anomaly_size']].apply(_lambda, axis=1)
         abnormal_count = np.sum(self.df['is_anamoly'])
-        msg = "Mode %s => Normal:Abnormal = %d:%d" % (self.phase, len(self) - abnormal_count, abnormal_count)
+        msg = "Mode %s => Normal:Abnormal = %d:%d" % (self.phase, (len(self) - abnormal_count), abnormal_count)
         print(msg)
         # debug check
         if self.phase == "train":
@@ -78,9 +81,9 @@ class ATZDataset(Dataset):
         Return 0 for normal images and 1 for abnormal images """
 
         if label in ["NORMAL0", "NORMAL1"] or anomaly_size_px == 0:
-            return torch.tensor(ATZDataset.NORMAL, dtype=torch.uint8, device=self.device)
+            return ATZDataset.NORMAL
         else:
-            return torch.tensor(ATZDataset.ABNORMAL, dtype=torch.uint8, device=self.device)
+            return ATZDataset.ABNORMAL
 
     def __len__(self):
         return len(self.df)
@@ -104,7 +107,7 @@ class ATZDataset(Dataset):
         if self.transform:
             image = self.transform(image)
         # cv2.imshow("patch", image)
-        return image.to(self.device), label.to(self.device)
+        return image.to(self.device), torch.tensor(label, dtype=torch.uint8).to(self.device)
 
     def cache_limit_check(self):
         """

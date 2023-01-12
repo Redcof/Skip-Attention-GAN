@@ -125,9 +125,9 @@ def load_data(opt):
                     or anomaly_size_px == 0
                     # not in iou range
                     or not (1 >= object_area_percent >= object_area_threshold)):
-                return torch.tensor(normal, dtype=torch.uint8, device=device)
+                return normal
             else:
-                return torch.tensor(abnormal, dtype=torch.uint8, device=device)
+                return abnormal
 
         transform = transforms.Compose([transforms.Resize((opt.isize, opt.isize)),
                                         transforms.ToTensor(),

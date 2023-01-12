@@ -120,7 +120,7 @@ class Options:
         try:
             str_ids = self.opt.gpu_ids
             self.opt.gpu_ids = ast.literal_eval(str_ids)
-        except ValueError:
+        except Exception:
             self.opt.gpu_ids = []
         # if str(self.opt.gpu_ids).strip() != "":
         #     str_ids = self.opt.gpu_ids.split(',')
