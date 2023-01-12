@@ -1,5 +1,6 @@
 """ BaseModel
 """
+import ast
 # pylint: disable=C0301,E1101,W0622,C0103,R0902,R0915
 
 ##
@@ -24,6 +25,8 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 
 from PIL import Image
+
+from options import Options
 
 
 # from lib import GradCAMplus
@@ -121,7 +124,7 @@ class BaseModel():
         return reals, fakes, fixed
 
     ##
-    def save_weights(self, epoch: int, is_best:bool = False):
+    def save_weights(self, epoch: int, is_best: bool = False):
         """Save netG and netD weights for the current epoch.
 
         Args:
@@ -206,6 +209,14 @@ class BaseModel():
                 if self.opt.display:
                     self.visualizer.display_current_images(reals, fakes, fixed)
 
+            try:
+                # check mission control instruction
+                val = ast.literal_eval(Options.mission_control("batch", "stop"))
+                self.opt.log("Mission control batch:stop=>%d" % val)
+                if val != -1 and val == epoch_iter // self.opt.batchsize: break
+            except Exception:
+                ...
+
         print(">> Training model %s. Epoch %d/%d" % (self.name, self.epoch + 1, self.opt.niter))
 
     ##
@@ -227,6 +238,13 @@ class BaseModel():
                 best_auc = res['AUC']
                 self.save_weights(self.epoch)
             self.visualizer.print_current_performance(res, best_auc)
+            try:
+                # check mission control instruction
+                val = ast.literal_eval(Options.mission_control("epoch", "stop"))
+                self.opt.log("Mission control epoch:stop=>%d" % val)
+                if val != -1 and val == self.epoch: break
+            except Exception:
+                ...
         print(">> Training model %s.[Done]" % self.name)
 
     ##

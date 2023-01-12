@@ -8,7 +8,10 @@ Returns:
 
 import argparse
 import ast
+import configparser
 import os
+import pathlib
+
 import torch
 
 
@@ -173,3 +176,10 @@ class Options:
         with open(file_name, 'a') as opt_file:
             opt_file.write('%s\n' % str_)
         print(str_)
+
+    @staticmethod
+    def mission_control(section, key):
+        inifile = str(pathlib.Path(__file__).parents[0] / 'mission_control.ini')
+        config = configparser.ConfigParser()
+        config.read(inifile)
+        return config[section][key]

@@ -41,7 +41,7 @@ python train.py \
   --batchsize 32 \
   --verbose \
   \
-  --niter 20 \
+  --niter 10 \
   --iter 0 \
   \
   --save_image_freq 50 \
