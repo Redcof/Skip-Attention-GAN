@@ -68,7 +68,9 @@ class ATZDataset(Dataset):
         # perform label-transform
         self.df['is_anamoly'] = self.df[['image', 'label_txt', 'anomaly_size']].apply(_lambda, axis=1)
         abnormal_count = np.sum(self.df['is_anamoly'])
-        msg = "Mode %s => Normal:Abnormal = %d:%d" % (self.phase, (len(self) - abnormal_count), abnormal_count)
+        self.normal_count = (len(self) - abnormal_count)
+        self.abnormal_count = abnormal_count
+        msg = "Mode %s => Normal:Abnormal = %d:%d" % (self.phase, self.normal_count, self.abnormal_count)
         print(msg)
         # debug check
         if self.phase == "train":

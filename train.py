@@ -25,18 +25,21 @@ def main():
 
     # Arguments
     opt = Options().parse()
+    now = datetime.now()
+    dt_string_start = now.strftime("%d/%m/%Y %H:%M:%S")
+    opt.log("Experiment Start:%s" % dt_string_start)
     # Load Data
     data = load_data(opt)
     # Load Model
     model = load_model(opt, data)
     now = datetime.now()
-    dt_string1 = now.strftime("Start: %d/%m/%Y %H:%M:%S")
+    dt_string_start = now.strftime("%d/%m/%Y %H:%M:%S")
     # Train Model
     model.train()
     now = datetime.now()
-    dt_string = now.strftime("Start: %d/%m/%Y %H:%M:%S")
-    print("Start:", dt_string1)
-    print("End:", dt_string)
+    dt_string_end = now.strftime("%d/%m/%Y %H:%M:%S")
+    opt.log("Start:%s" % dt_string_start)
+    opt.log("End:%s" % dt_string_end)
 
 
 if __name__ == '__main__':

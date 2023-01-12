@@ -153,6 +153,9 @@ def load_data(opt):
                               random_state=opt.manualseed,
                               label_transform=label_transform,
                               wavelet_transform=wavelet_transform)
+        opt.log("Dataset '%s' => Normal:Abnormal = %d:%d" % ("train", train_ds.normal_count, train_ds.abnormal_count))
+        opt.log("Dataset '%s' => Normal:Abnormal = %d:%d" % ("test", valid_ds.normal_count, valid_ds.abnormal_count))
+
     # FOLDER
     else:
         transform = transforms.Compose([transforms.Resize((opt.isize, opt.isize)),

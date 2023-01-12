@@ -158,13 +158,18 @@ class Options:
         from datetime import datetime
 
         # datetime object containing current date and time
-        now = datetime.now()
-        dt_string = now.strftime("Start: %d/%m/%Y %H:%M:%S")
         file_name = os.path.join(expr_dir, 'opt.txt')
         with open(file_name, 'wt') as opt_file:
             opt_file.write('------------ Options -------------\n')
-            opt_file.write('%s\n' % dt_string)
             for k, v in sorted(args.items()):
                 opt_file.write('%s: %s\n' % (str(k), str(v)))
             opt_file.write('-------------- End ----------------\n')
+        setattr(self.opt, 'log', self.log)
         return self.opt
+
+    def log(self, str_):
+        expr_dir = os.path.join(self.opt.outf, self.opt.name, 'train')
+        file_name = os.path.join(expr_dir, 'opt.txt')
+        with open(file_name, 'a') as opt_file:
+            opt_file.write('%s\n' % str_)
+        print(str_)
