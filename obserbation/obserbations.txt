@@ -1,0 +1,56 @@
+[ablation_7]
+Dataset 'train' => Normal:Abnormal = 64:0
+Dataset 'test' => Normal:Abnormal = 21:43
+atz_classes: ["KK", "CK", "CL"]
+atz_subjects: ['F1', 'M1', 'F2', 'M2']
+64 images
+batchsize=32
+epoch=10
+patch=128
+AUC=0.660
+AnamolyScore=
+    avg=	0.121015
+    std=	0.239784
+    min=	0.000000
+    25%=	0.001494
+    50%=	0.005650
+    75%=	0.086941
+    max=	1.000000
+
+
+[exp_1]
+Dataset 'train' => Normal:Abnormal = 43087:0
+Dataset 'test' => Normal:Abnormal = 43308:533
+atz_classes: ["KK", "CK", "CL"]
+atz_subjects: ['F1', 'M1', 'F2', 'M2']
+batchsize=32
+epoch=20
+patch=128
+AUC=0.506
+AnamolyScore=
+    avg=	0.010547
+    std=	0.007096
+    min=	0.000012
+    25%=	0.005450
+    50%=	0.009017
+    75%=	0.013979
+    max=	0.053772
+
+[exp_2]
+Excluded all patches outsize of HUMAN area
+Dataset 'train' => Normal:Abnormal = 43087:0
+Dataset 'test' => Normal:Abnormal = 43308:533
+atz_classes: ["KK", "CK", "CL"]
+atz_subjects: ['F1', 'M1', 'F2', 'M2']
+batchsize=32
+epoch=20
+patch=128
+AUC=?
+AnamolyScore=
+    avg=	?
+    std=	?
+    min=	?
+    25%=	?
+    50%=	?
+    75%=	?
+    max=	?

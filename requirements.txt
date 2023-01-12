@@ -75,3 +75,4 @@ pandas
 imageio
 plotly
 opencv-python
+shapely

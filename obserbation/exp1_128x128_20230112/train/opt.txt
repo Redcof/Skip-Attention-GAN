@@ -1,0 +1,57 @@
+------------ Options -------------
+abnormal_class: 
+area_threshold: 0.1
+atz_ablation: 0
+atz_classes: ["KK", "CK", "CL"]
+atz_patch_db: customdataset/atz/atz_patch_dataset__3_128_36.csv
+atz_subjects: ['F1', 'M1', 'F2', 'M2']
+atz_test_txt: None
+atz_train_txt: None
+batchsize: 32
+beta1: 0.5
+dataroot: /mnt/c/Users/dndlssardar/Downloads/THZ_dataset_det_VOC/JPEGImages
+dataset: atz
+device: gpu
+display: False
+display_id: 0
+display_port: 8097
+display_server: http://localhost
+droplast: True
+extralayers: 0
+gpu_ids: [0]
+isTrain: True
+isize: 128
+iter: 0
+load_weights: False
+lr: 0.0002
+lr_decay_iters: 50
+lr_policy: lambda
+manualseed: 47
+metric: roc
+model: skipattentionganomaly
+name: exp1_128x128_20230112
+nc: 3
+ndf: 64
+ngf: 64
+ngpu: 1
+niter: 20
+niter_decay: 100
+nz: 100
+outf: ./output
+path: 
+phase: train
+print_freq: 1
+resume: 
+save_image_freq: 50
+save_test_images: true
+verbose: True
+w_adv: 1
+w_con: 50
+w_lat: 1
+workers: 8
+-------------- End ----------------
+Experiment Start:12/01/2023 16:57:40
+Dataset 'train' => Normal:Abnormal = 43087:0
+Dataset 'test' => Normal:Abnormal = 43308:533
+Start:12/01/2023 16:57:43
+End:12/01/2023 22:16:47

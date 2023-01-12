@@ -21,7 +21,7 @@ export DATA_ROOT="/mnt/c/Users/dndlssardar/Downloads/THZ_dataset_det_VOC/JPEGIma
 python train.py \
   --phase test \
   \
-  --name abl_128x128_20230112 \
+  --name exp2_test_128x128_20230112 \
   --model skipattentionganomaly \
   \
   --dataroot "$DATA_ROOT" \

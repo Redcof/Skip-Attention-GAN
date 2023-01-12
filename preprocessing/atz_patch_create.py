@@ -1,12 +1,15 @@
+import platform
+
 import numpy as np
 import pandas as pd
 from empatches import EMPatches
-from patchify import patchify
 import pathlib
 import os
 import cv2
 import matplotlib.pyplot as plt
 from tqdm import tqdm
+import shapely.affinity
+import shapely.geometry
 
 from preprocessing.utils import read_vocxml_content, parsing_filename
 
@@ -25,7 +28,11 @@ atz_classes = ["NORMAL0", "NORMAL1", "HUMAN",
 # in that list will be ignored during dataset creation, set -1 to consider all classes
 atz_ignore_cls_idx_lim = atz_classes.index("HUMAN")
 
-root = pathlib.Path("/Users/soumen/Downloads/Datasets/ActiveTerahertzImagingDataset")
+if platform.system() == "Darwin":
+    root = pathlib.Path("/Users/soumen/Downloads/Datasets/ActiveTerahertzImagingDataset")
+elif platform.system() == "Windows":
+    root = pathlib.Path(r"C:\Users\dndlssardar\Downloads")
+
 image_root = root / "THZ_dataset_det_VOC/JPEGImages"
 voc_root = root / "THZ_dataset_det_VOC/Annotations"
 display = False  # display plots
@@ -79,6 +86,23 @@ def create_patch_dataset():
                 img = cv2.rectangle(img, (x, y), (x + w, y + h), (r, g, b), 4)
                 print("boxes:", label_txt, atz_classes.index(label_txt))
 
+        def rectangle(x1, y1, x2, y2):
+            return shapely.geometry.Polygon((
+                (x1, y1), (x2, y1), (x2, y2), (x1, y2)
+            ))
+
+        def within_human_region(patch_box):
+            human = rectangle(*box_dict["HUMAN"])
+            box = rectangle(*patch_box)
+            return human.intersects(box)
+
+        def good_enough(img_p, mask_p):
+            """
+            If all pixels are black or contains salt-n-pepper noise
+            we can return False.
+            """
+            return True
+
         if display:
             # render image
             cv2.imshow("image", img)
@@ -93,6 +117,10 @@ def create_patch_dataset():
         rows = len(img_patches) // cols + 1
         dictionary_ls = []
         for idx, (img_p, mask_p, patch_loc) in enumerate(zip(img_patches, mask_patches, indices)):
+            if not within_human_region(patch_loc):
+                continue
+            if not good_enough(img_p, mask_p):
+                continue
             img_p = img_p.copy()
             mask_p = mask_p.copy()
             # ignore a patch with all [black pixels]
