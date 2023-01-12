@@ -86,6 +86,7 @@ def load_data(opt):
         train_dataset_txt = opt.atz_train_txt
         test_dataset_txt = opt.atz_test_txt
         atz_ablation = opt.atz_ablation
+        device = torch.device("cuda:0" if opt.device != 'cpu' else "cpu")
 
         NORMAL_CLASSES = ["NORMAL0", "NORMAL1"]
         try:
@@ -124,9 +125,9 @@ def load_data(opt):
                     or anomaly_size_px == 0
                     # not in iou range
                     or not (1 >= object_area_percent >= object_area_threshold)):
-                return torch.tensor(normal, dtype=torch.uint8)
+                return torch.tensor(normal, dtype=torch.uint8, device=device)
             else:
-                return torch.tensor(abnormal, dtype=torch.uint8)
+                return torch.tensor(abnormal, dtype=torch.uint8, device=device)
 
         transform = transforms.Compose([transforms.Resize((opt.isize, opt.isize)),
                                         transforms.ToTensor(),
@@ -134,6 +135,7 @@ def load_data(opt):
 
         train_ds = ATZDataset(patch_dataset_csv, opt.dataroot, "train",
                               atz_dataset_train_or_test_txt=train_dataset_txt,
+                              device=device,
                               classes=atz_classes,
                               subjects=atz_subjects,
                               ablation=atz_ablation,
@@ -143,6 +145,7 @@ def load_data(opt):
                               wavelet_transform=wavelet_transform)
         valid_ds = ATZDataset(patch_dataset_csv, opt.dataroot, "test",
                               atz_dataset_train_or_test_txt=test_dataset_txt,
+                              device=device,
                               classes=atz_classes,
                               subjects=atz_subjects,
                               ablation=atz_ablation,

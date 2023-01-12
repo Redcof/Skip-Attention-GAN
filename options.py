@@ -7,6 +7,7 @@ Returns:
 """
 
 import argparse
+import ast
 import os
 import torch
 
@@ -106,22 +107,30 @@ class Options:
         """
         cuda_available = torch.cuda.is_available()
         cuda_count = torch.cuda.device_count()
-        # cuda_current = torch.cuda.current_device()
-        print("CUDA Info", cuda_available, cuda_count)
+        try:
+            cuda_current = torch.cuda.current_device()
+        except:
+            cuda_current = "cpu"
+        print("CUDA Info", cuda_available, cuda_count, cuda_current)
 
         self.opt = self.parser.parse_args()
         self.opt.isTrain = self.isTrain  # train or test
 
         # get gpu ids
-        if str(self.opt.gpu_ids).strip() != "":
-            str_ids = self.opt.gpu_ids.split(',')
+        try:
+            str_ids = self.opt.gpu_ids
+            self.opt.gpu_ids = ast.literal_eval(str_ids)
+        except ValueError:
             self.opt.gpu_ids = []
-            for str_id in str_ids:
-                idx = int(str_id)
-                if idx >= 0:
-                    self.opt.gpu_ids.append(idx)
-        else:
-            self.opt.gpu_ids = []
+        # if str(self.opt.gpu_ids).strip() != "":
+        #     str_ids = self.opt.gpu_ids.split(',')
+        #     self.opt.gpu_ids = []
+        #     for str_id in str_ids:
+        #         idx = int(str_id)
+        #         if idx >= 0:
+        #             self.opt.gpu_ids.append(idx)
+        # else:
+        #     self.opt.gpu_ids = []
 
         # set gpu ids
         if len(self.opt.gpu_ids) > 0:

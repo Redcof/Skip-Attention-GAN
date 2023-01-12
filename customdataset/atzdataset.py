@@ -73,15 +73,14 @@ class ATZDataset(Dataset):
         if self.phase == "test":
             assert abnormal_count != 0, "%s\nNo abnormal data found in test test" % msg
 
-    @staticmethod
-    def label_transform_default(image, label, anomaly_size_px):
+    def label_transform_default(self, image, label, anomaly_size_px):
         """ This label transform is designed for SAGAN.
         Return 0 for normal images and 1 for abnormal images """
 
         if label in ["NORMAL0", "NORMAL1"] or anomaly_size_px == 0:
-            return torch.tensor(ATZDataset.NORMAL, dtype=torch.uint8)
+            return torch.tensor(ATZDataset.NORMAL, dtype=torch.uint8, device=self.device)
         else:
-            return torch.tensor(ATZDataset.ABNORMAL, dtype=torch.uint8)
+            return torch.tensor(ATZDataset.ABNORMAL, dtype=torch.uint8, device=self.device)
 
     def __len__(self):
         return len(self.df)
@@ -105,7 +104,7 @@ class ATZDataset(Dataset):
         if self.transform:
             image = self.transform(image)
         # cv2.imshow("patch", image)
-        return image, label
+        return image.to(self.device), label.to(self.device)
 
     def cache_limit_check(self):
         """
