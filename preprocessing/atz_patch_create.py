@@ -44,7 +44,7 @@ patch_image_save_path = dataset_save_path / "images"
 os.makedirs(str(patch_image_save_path), exist_ok=True)
 
 # inter
-intersection = patch_size * patch_size
+PATCH_AREA = patch_size ** 2
 
 
 def create_patch_dataset():
@@ -94,7 +94,13 @@ def create_patch_dataset():
         def within_human_region(patch_box):
             human = rectangle(*box_dict["HUMAN"])
             box = rectangle(*patch_box)
-            return human.intersects(box)
+            is_intersect = human.intersects(box)
+            if is_intersect:
+                intersection = human.intersection(box)
+                intersection_area = intersection.area
+                if intersection_area / PATCH_AREA >= 0.1:
+                    return True
+            return False
 
         def good_enough(img_p, mask_p):
             """
@@ -117,10 +123,13 @@ def create_patch_dataset():
         rows = len(img_patches) // cols + 1
         dictionary_ls = []
         for idx, (img_p, mask_p, patch_loc) in enumerate(zip(img_patches, mask_patches, indices)):
-            if not within_human_region(patch_loc):
-                continue
-            if not good_enough(img_p, mask_p):
-                continue
+            max_val = int(np.max(mask_p))
+            if max_val == 0:
+                # it's a normal image
+                if not within_human_region(patch_loc):
+                    continue
+                if not good_enough(img_p, mask_p):
+                    continue
             img_p = img_p.copy()
             mask_p = mask_p.copy()
             # ignore a patch with all [black pixels]
@@ -128,7 +137,6 @@ def create_patch_dataset():
             # create patch file name
             # patch_file_name = "%s.jpg" % image_name.replace(".jpg", "_%04d" % idx)
             # class label
-            max_val = int(np.max(mask_p))
             class_index = max_val
 
             # class name

@@ -25,19 +25,20 @@
 
 ## Acronyms
 
-```
-UN="UNKNOWN", UNKNOWN="UNKNOWN",
-CP="Cell Phone", 
-MD="Metal Dagger",
-GA="Gun", 
-KK="Kitchen Knife", 
-SS="Scissors", 
-KC="Key Chain", 
-WB="Water Bottle", 
-LW="Leather Wallet",
-CK="Ceramic Knife",
-CL="Cigarette Lighter", 
-```
+
+- UN="UNKNOWN", 
+- UNKNOWN="UNKNOWN",
+- <font color="orange">CP="Cell Phone",</font> 
+- <font color="red">MD="Metal Dagger",</font>
+- <font color="red">GA="Gun", </font>
+- <font color="red">KK="Kitchen Knife",</font> 
+- <font color="red">SS="Scissors", </font>
+- <font color="orange">KC="Key Chain", </font>
+- WB="Water Bottle", 
+- LW="Leather Wallet",
+- <font color="red">CK="Ceramic Knife",</font>
+- <font color="red">CL="Cigarette Lighter", </font>
+
 
 ## Special Classes
 

@@ -26,10 +26,10 @@ python train.py \
   \
   --dataroot "$DATA_ROOT" \
   --dataset atz \
-  --atz_patch_db customdataset/atz/atz_patch_dataset__3_128_36_v2.csv \
+  --atz_patch_db customdataset/atz/atz_patch_dataset__3_128_36_v2_10%.csv \
   --area_threshold 0.1 \
   --atz_subjects "['F1', 'M1', 'F2', 'M2']" \
-  --atz_classes '["KK", "CK", "CL"]' \
+  --atz_classes '["KK", "CK", "CL", "MD", "SS", "GA"]' \
   --manualseed 47 \
   \
   --verbose \
