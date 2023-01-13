@@ -16,7 +16,7 @@ export PYTHONPATH="$PYTHONPATH:$(pwd)/experiment"
 # python preprocessing/split_atz.py
 export DATA_ROOT="/Users/soumen/Downloads/Datasets/ActiveTerahertzImagingDataset/THZ_dataset_det_VOC/JPEGImages" # mac
 #export DATA_ROOT="C:\\Users\\dndlssardar\\Downloads\\THZ_dataset_det_VOC\\JPEGImages"                            # windows
-#export DATA_ROOT="/mnt/c/Users/dndlssardar/Downloads/THZ_dataset_det_VOC/JPEGImages"                             # wsl
+export DATA_ROOT="/mnt/c/Users/dndlssardar/Downloads/THZ_dataset_det_VOC/JPEGImages"                             # wsl
 # run training
 python train.py \
   --phase train \
@@ -26,8 +26,8 @@ python train.py \
   \
   --dataroot "$DATA_ROOT" \
   --dataset atz \
-  --atz_patch_db customdataset/atz/atz_patch_dataset__3_128_36_v2_10%.csv \
-  --area_threshold 0.1 \
+  --atz_patch_db customdataset/atz/atz_patch_dataset__3_128_36_v2_10%_30_99%.csv \
+  --area_threshold 0.05 \
   --atz_subjects "['F1', 'M1', 'F2', 'M2']" \
   --atz_classes '["KK", "CK", "CL", "MD", "SS", "GA"]' \
   --manualseed 47 \
@@ -42,7 +42,7 @@ python train.py \
   --batchsize 32 \
   --verbose \
   \
-  --niter 20 \
+  --niter 15 \
   --iter 0 \
   \
   --save_image_freq 50 \

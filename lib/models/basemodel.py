@@ -209,14 +209,11 @@ class BaseModel():
                 if self.opt.display:
                     self.visualizer.display_current_images(reals, fakes, fixed)
 
-            try:
-                # check mission control instruction
-                val = ast.literal_eval(Options.mission_control("batch", "stop"))
-                self.opt.log("Mission control batch:stop=>%d" % val)
-                if val != -1 and val == epoch_iter // self.opt.batchsize: break
-            except Exception:
-                ...
-
+            # check mission control instruction
+            batch_no_to_stop = ast.literal_eval(Options.mission_control("batch", "stop"))
+            if batch_no_to_stop != -1 and batch_no_to_stop == (epoch_iter // self.opt.batchsize):
+                self.opt.log("Mission control batch:stop=>%d" % batch_no_to_stop)
+                break
         print(">> Training model %s. Epoch %d/%d" % (self.name, self.epoch + 1, self.opt.niter))
 
     ##
@@ -238,13 +235,14 @@ class BaseModel():
                 best_auc = res['AUC']
                 self.save_weights(self.epoch)
             self.visualizer.print_current_performance(res, best_auc)
-            try:
-                # check mission control instruction
-                val = ast.literal_eval(Options.mission_control("epoch", "stop"))
-                self.opt.log("Mission control epoch:stop=>%d" % val)
-                if val != -1 and val == self.epoch: break
-            except Exception:
-                ...
+
+            # check mission control instruction
+            epoch_to_stop = ast.literal_eval(Options.mission_control("epoch", "stop"))
+            batch_no_to_stop = ast.literal_eval(Options.mission_control("batch", "stop"))
+            if batch_no_to_stop > 0 or epoch_to_stop == self.epoch:
+                self.opt.log("Mission control epoch:stop=>%d" % epoch_to_stop)
+                break
+
         print(">> Training model %s.[Done]" % self.name)
 
     ##
@@ -317,7 +315,7 @@ class BaseModel():
                         self.times = np.array(self.times)
                         self.times = np.mean(self.times[:100] * 1000)
 
-                        # Scale error vector between [0, 1]
+            # Scale error vector between [0, 1]
             self.an_scores = (self.an_scores - torch.min(self.an_scores)) / (
                     torch.max(self.an_scores) - torch.min(self.an_scores))
             auc = evaluate(self.gt_labels, self.an_scores, metric=self.opt.metric)

@@ -265,21 +265,15 @@ class Skipattentionganomaly(BaseModel):
                 abn_scr = hist.loc[hist.labels == 1]['scores']
                 nrm_scr = hist.loc[hist.labels == 0]['scores']
 
-                # Create figure and plot the distribution.
-                # fig, ax = plt.subplots(figsize=(4,4));
-                sns.histplot(nrm_scr, label=r'Normal Scores')
-                sns.histplot(abn_scr, label=r'Abnormal Scores')
+                # Create figure and plot the distribution
+                # sns.histplot(nrm_scr, label=r'Normal Scores')
+                # sns.histplot(abn_scr, label=r'Abnormal Scores')
 
-                # if self.opt.display_id > 0:
-                #     self.visualizer.plot_histogram(self.epoch, [
-                #         dict(data=nrm_scr, label="Normal Scores"),
-                #         dict(data=abn_scr, label="Abnormal Scores"),
-                #     ])
-
-                plt.legend()
-                plt.yticks([])
-                plt.xlabel(r'Anomaly Scores')
-                plt.show()
+                if self.opt.display_id > 0:
+                    self.visualizer.plot_histogram(self.epoch, [
+                        dict(data=nrm_scr, label="Normal Scores"),
+                        dict(data=abn_scr, label="Abnormal Scores"),
+                    ])
 
             ##
             # PLOT PERFORMANCE
