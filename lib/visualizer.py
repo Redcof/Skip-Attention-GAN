@@ -10,6 +10,7 @@ import time
 import numpy as np
 import torchvision.utils as vutils
 
+
 ##
 class Visualizer():
     """ Visualizer wrapper based on Visdom.
@@ -140,7 +141,7 @@ class Visualizer():
                 'numbins': 30,
                 'xlabel': 'Anomaly Score',
                 'ylabel': 'Frequency',
-                'layoutopts' : {'plotly': {'legend': {'x': 0, 'y': 0}}}
+                'layoutopts': {'plotly': {'legend': {'x': 0, 'y': 0}}}
             },
             win=5
         )
@@ -185,7 +186,7 @@ class Visualizer():
         print(message)
         self.write_to_log_file(text=message)
 
-    def display_current_images(self, reals, fakes, fixed):
+    def display_current_images(self, reals, fakes, fixed, meta=None):
         """ Display current images.
 
         Args:
@@ -194,6 +195,7 @@ class Visualizer():
             reals ([FloatTensor]): Real Image
             fakes ([FloatTensor]): Fake Image
             fixed ([FloatTensor]): Fixed Fake Image
+            meta (string): Metadata of batch
         """
         reals = self.normalize(reals.cpu().numpy())
         fakes = self.normalize(fakes.cpu().numpy())
@@ -202,6 +204,8 @@ class Visualizer():
         self.vis.images(reals, win=1, opts={'title': 'Reals'})
         self.vis.images(fakes, win=2, opts={'title': 'Fakes'})
         # self.vis.images(fixed, win=3, opts={'title': 'Fixed'})
+        if meta:
+            self.vis.text(meta)
 
     def save_current_images(self, epoch, reals, fakes, fixed):
         """ Save images for epoch i.

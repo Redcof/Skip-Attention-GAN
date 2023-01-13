@@ -204,6 +204,9 @@ class Skipattentionganomaly(BaseModel):
                 epoch_iter += self.opt.batchsize
                 time_i = time.time()
 
+                if self.opt.dataset == "atz":
+                    data = data[0]
+
                 # Forward - Pass
                 self.set_input(data)
                 self.fake = self.netg(self.input)

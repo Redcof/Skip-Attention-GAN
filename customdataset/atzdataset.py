@@ -99,7 +99,7 @@ class ATZDataset(Dataset):
         anomaly_size = record[["anomaly_size"]].values[0]
         label = record[["is_anamoly"]].values[0]
 
-        return dict(current_file=current_file, label_txt=label_txt, x1x2y1y2=(x1, x2, y1, y2),
+        return dict(current_file=current_file, label_txt=label_txt, x1=x1, x2=x2, y1=y1, y2=y2,
                     anomaly_size=anomaly_size, is_anomaly=label)
 
     def __getitem__(self, idx):
@@ -121,7 +121,7 @@ class ATZDataset(Dataset):
         if self.transform:
             image = self.transform(image)
         # cv2.imshow("patch", image)
-        return image.to(self.device), torch.tensor(label, dtype=torch.uint8).to(self.device)
+        return (image.to(self.device), torch.tensor(label, dtype=torch.uint8).to(self.device)), self.get_meta(idx)
 
     def cache_limit_check(self):
         """

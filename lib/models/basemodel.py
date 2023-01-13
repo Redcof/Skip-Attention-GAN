@@ -194,6 +194,15 @@ class BaseModel():
             self.total_steps += self.opt.batchsize
             epoch_iter += self.opt.batchsize
 
+            if self.opt.dataset == "atz":
+                meta = data[1]
+                string = ""
+                for current_file, x1, x2, y1, y2, label_txt in zip(
+                        meta['current_file'], meta['x1'], meta['x2'], meta['y1'], meta['y2'], meta['label_txt']
+                ):
+                    string = "%s[%s, %s(%d,%d,%d,%d)]\n" % (string, current_file, label_txt, x1, x2, y1, y2)
+                data = data[0]
+
             self.set_input(data)
             self.optimize_params()
 
@@ -207,7 +216,7 @@ class BaseModel():
                 reals, fakes, fixed = self.get_current_images()
                 self.visualizer.save_current_images(self.epoch, reals, fakes, fixed)
                 if self.opt.display:
-                    self.visualizer.display_current_images(reals, fakes, fixed)
+                    self.visualizer.display_current_images(reals, fakes, fixed, meta=string)
 
             # check mission control instruction
             batch_no_to_stop = ast.literal_eval(Options.mission_control("batch", "stop"))
