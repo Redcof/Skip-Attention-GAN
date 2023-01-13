@@ -174,6 +174,10 @@ def create_patch_dataset():
 
             # class name
             label_txt = atz_classes[class_index]
+            # if class_index >= 3:
+            #     plt.imshow(img_p)
+            #     plt.title(label_txt)
+            #     plt.show()
             global_box = box_dict.get(label_txt, (0, 0, 0, 0))
             mask_p[mask_p > 0] = 1  # replace all non zeros with 1
             # object area in musk

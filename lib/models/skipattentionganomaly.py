@@ -246,6 +246,8 @@ class Skipattentionganomaly(BaseModel):
             # Scale error vector between [0, 1]
             self.an_scores = (self.an_scores - torch.min(self.an_scores)) / \
                              (torch.max(self.an_scores) - torch.min(self.an_scores))
+            saveto = os.path.join(self.opt.outf, self.opt.name, self.opt.phase)
+            # auc = evaluate(self.gt_labels, self.an_scores, metric=self.opt.metric)
             auc = roc(self.gt_labels, self.an_scores)
             performance = OrderedDict([('Avg Run Time (ms/batch)', self.times), ('AUC', auc)])
 
@@ -257,23 +259,9 @@ class Skipattentionganomaly(BaseModel):
                 scores['scores'] = self.an_scores.cpu()
                 scores['labels'] = self.gt_labels.cpu()
                 hist = pd.DataFrame.from_dict(scores)
-                file = "%s/%s/%shistogram.csv" % (self.opt.outf, self.name, self.opt.phase)
+                file = "%s/%s_%s_histogram.csv" % (saveto, self.opt.name, self.opt.phase)
                 print("Saving histogram @: ", file)
                 hist.to_csv(file)
-
-                # Filter normal and abnormal scores.
-                abn_scr = hist.loc[hist.labels == 1]['scores']
-                nrm_scr = hist.loc[hist.labels == 0]['scores']
-
-                # Create figure and plot the distribution
-                # sns.histplot(nrm_scr, label=r'Normal Scores')
-                # sns.histplot(abn_scr, label=r'Abnormal Scores')
-
-                if self.opt.display_id > 0:
-                    self.visualizer.plot_histogram(self.epoch, [
-                        dict(data=nrm_scr, label="Normal Scores"),
-                        dict(data=abn_scr, label="Abnormal Scores"),
-                    ])
 
             ##
             # PLOT PERFORMANCE
