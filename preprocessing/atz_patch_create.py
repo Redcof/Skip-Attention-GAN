@@ -1,4 +1,5 @@
 import platform
+import time
 
 import numpy as np
 import pandas as pd
@@ -8,8 +9,8 @@ import os
 import cv2
 import matplotlib.pyplot as plt
 from tqdm import tqdm
-import shapely.affinity
 import shapely.geometry
+from PIL import Image
 
 from preprocessing.utils import read_vocxml_content, parsing_filename
 
@@ -45,6 +46,61 @@ os.makedirs(str(patch_image_save_path), exist_ok=True)
 
 # inter
 PATCH_AREA = patch_size ** 2
+
+
+def is_mostly_black(image, threshold=50, percent=0.8):
+    pilimage = Image.fromarray(image.copy()).convert('L')
+    pixels = pilimage.getdata()
+    dark_pixel_count = 0
+    for pixel in pixels:
+        if pixel < threshold:
+            dark_pixel_count += 1
+    if dark_pixel_count / PATCH_AREA > percent:
+        # ax = plt.subplot(121)
+        # ax.set_title("Rejected 3CH image. %d/%d" % (PATCH_AREA, dark_pixel_count), fontdict=dict(color="red"))
+        # plt.imshow(image)
+        # ax = plt.subplot(122)
+        # ax.set_title("1CH image. %5.4f%%" % (dark_pixel_count / PATCH_AREA))
+        # plt.imshow(pilimage, cmap="gray")
+        # plt.show()
+        return True
+    else:
+        # ax = plt.subplot(121)
+        # ax.set_title("Accepted 3CH image. %d/%d" % (PATCH_AREA, dark_pixel_count))
+        # plt.imshow(image)
+        # ax = plt.subplot(122)
+        # ax.set_title("1CH image. %5.4f%%" % (dark_pixel_count / PATCH_AREA))
+        # plt.imshow(pilimage, cmap="gray")
+        # plt.show()
+        return False
+
+
+def good_enough(img_p, mask_p):
+    """
+    If all pixels are black or contains salt-n-pepper noise
+    we can return False.
+    """
+
+    is_black_image = is_mostly_black(img_p, threshold=30, percent=0.99)
+    return not is_black_image
+
+
+def rectangle(x1, y1, x2, y2):
+    return shapely.geometry.Polygon((
+        (x1, y1), (x2, y1), (x2, y2), (x1, y2)
+    ))
+
+
+def box_intersect(main_box_x1y1x2y2, subject_box_x1y1x2y2):
+    main_rect = rectangle(*main_box_x1y1x2y2)
+    subject_rect = rectangle(*subject_box_x1y1x2y2)
+    is_intersect = main_rect.intersects(subject_rect)
+    if is_intersect:
+        intersection = main_rect.intersection(subject_rect)
+        intersection_area = intersection.area
+        if intersection_area / PATCH_AREA >= 0.1:
+            return True
+    return False
 
 
 def create_patch_dataset():
@@ -86,29 +142,6 @@ def create_patch_dataset():
                 img = cv2.rectangle(img, (x, y), (x + w, y + h), (r, g, b), 4)
                 print("boxes:", label_txt, atz_classes.index(label_txt))
 
-        def rectangle(x1, y1, x2, y2):
-            return shapely.geometry.Polygon((
-                (x1, y1), (x2, y1), (x2, y2), (x1, y2)
-            ))
-
-        def within_human_region(patch_box):
-            human = rectangle(*box_dict["HUMAN"])
-            box = rectangle(*patch_box)
-            is_intersect = human.intersects(box)
-            if is_intersect:
-                intersection = human.intersection(box)
-                intersection_area = intersection.area
-                if intersection_area / PATCH_AREA >= 0.1:
-                    return True
-            return False
-
-        def good_enough(img_p, mask_p):
-            """
-            If all pixels are black or contains salt-n-pepper noise
-            we can return False.
-            """
-            return True
-
         if display:
             # render image
             cv2.imshow("image", img)
@@ -126,7 +159,7 @@ def create_patch_dataset():
             max_val = int(np.max(mask_p))
             if max_val == 0:
                 # it's a normal image
-                if not within_human_region(patch_loc):
+                if not box_intersect(box_dict["HUMAN"], patch_loc):
                     continue
                 if not good_enough(img_p, mask_p):
                     continue
@@ -180,7 +213,7 @@ def create_patch_dataset():
     atz_patch_dataset_df.columns = dictionary.keys()
     atz_patch_dataset_df.to_csv(patch_dataset_csv)
     # print("Files are saved @", str(patch_image_save_path))
-    print("Metadata @", patch_dataset_csv)
+    print("Metadata @", patch_dataset_csv, len(atz_patch_dataset_df), "items")
 
 
 if __name__ == '__main__':
