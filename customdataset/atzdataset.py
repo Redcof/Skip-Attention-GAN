@@ -90,6 +90,18 @@ class ATZDataset(Dataset):
     def __len__(self):
         return len(self.df)
 
+    def get_meta(self, idx):
+        record = self.df.iloc[idx, :]
+        # read metadata
+        current_file = record[["image"]].values[0]
+        label_txt = record[["label_txt"]].values[0]
+        x1, x2, y1, y2 = ast.literal_eval(record[["x1x2y1y2"]].values[0])
+        anomaly_size = record[["anomaly_size"]].values[0]
+        label = record[["is_anamoly"]].values[0]
+
+        return dict(current_file=current_file, label_txt=label_txt, x1x2y1y2=(x1, x2, y1, y2),
+                    anomaly_size=anomaly_size, is_anomaly=label)
+
     def __getitem__(self, idx):
         """Read a patch and return the item"""
         # read a record

@@ -21,7 +21,7 @@ export DATA_ROOT="/mnt/c/Users/dndlssardar/Downloads/THZ_dataset_det_VOC/JPEGIma
 python train.py \
   --phase train \
   \
-  --name exp2_train_128x128_20230113 \
+  --name exp3_train_128x128_20230113 \
   --model skipattentionganomaly \
   \
   --dataroot "$DATA_ROOT" \
@@ -39,7 +39,7 @@ python train.py \
   --gpu_ids "[0,]" \
   \
   --isize 128 \
-  --batchsize 32 \
+  --batchsize 64 \
   --verbose \
   \
   --niter 15 \

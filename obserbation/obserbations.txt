@@ -38,14 +38,38 @@ AnamolyScore=
     max=	0.053772
 
 [exp_2]
-Excluded all patches: outsize of HUMAN area or overlap < 10%, patch with 99% dark-pixels with color <=30 excluded
+    [normal]  outsize of HUMAN area or overlap < 10%,
+    [normal]  patch with 99% dark-pixels with color <=30 excluded
+Dataset 'train' => Normal:Abnormal = 34595:0
+Dataset 'test' => Normal:Abnormal = 34806:1048
+threat_area threshold = 5%
+atz_classes: ["KK", "CK", "CL", "MD", "SS", "GA"]
+atz_subjects: ['F1', 'M1', 'F2', 'M2']
+batchsize=32
+epoch=10
+patch=128
+AUC=49.3%
+AnamolyScore=
+    avg=	?
+    std=	?
+    min=	?
+    25%=	?
+    50%=	?
+    75%=	?
+    max=	?
+
+[exp_2]
+Excluded all patches:
+    [normal]  outsize of HUMAN area or overlap < 10%,
+    [normal]  patch with 99% dark-pixels with color <=30 excluded
+    [abnormal]  patch with 99% dark-pixels with color <=30 excluded
 Dataset 'train' => Normal:Abnormal = 34595:0
 Dataset 'test' => Normal:Abnormal = 34824:1068
 threat_area threshold = 5%
 atz_classes: ["KK", "CK", "CL", "MD", "SS", "GA"]
 atz_subjects: ['F1', 'M1', 'F2', 'M2']
 batchsize=32
-epoch=15
+epoch=?
 patch=128
 AUC=?
 AnamolyScore=

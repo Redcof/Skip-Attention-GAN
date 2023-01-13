@@ -1,5 +1,6 @@
 import platform
 import time
+from collections import defaultdict
 
 import numpy as np
 import pandas as pd
@@ -47,8 +48,13 @@ os.makedirs(str(patch_image_save_path), exist_ok=True)
 # inter
 PATCH_AREA = patch_size ** 2
 
+rejected = defaultdict(lambda: 0)
+accepted = defaultdict(lambda: 0)
 
-def is_mostly_black(image, threshold=50, percent=0.8):
+
+def is_mostly_black(image, is_anomaly, threshold=50, percent=0.8):
+    color = "cyan" if is_anomaly else "red"
+    is_anomaly = "anomaly" if is_anomaly else "normal"
     pilimage = Image.fromarray(image.copy()).convert('L')
     pixels = pilimage.getdata()
     dark_pixel_count = 0
@@ -56,17 +62,26 @@ def is_mostly_black(image, threshold=50, percent=0.8):
         if pixel < threshold:
             dark_pixel_count += 1
     if dark_pixel_count / PATCH_AREA > percent:
-        # ax = plt.subplot(121)
-        # ax.set_title("Rejected 3CH image. %d/%d" % (PATCH_AREA, dark_pixel_count), fontdict=dict(color="red"))
-        # plt.imshow(image)
-        # ax = plt.subplot(122)
-        # ax.set_title("1CH image. %5.4f%%" % (dark_pixel_count / PATCH_AREA))
-        # plt.imshow(pilimage, cmap="gray")
-        # plt.show()
+        if is_anomaly == "anomaly":
+            # ax = plt.subplot(121)
+            # ax.set_title("'%s' 3CH image [x]. %d/%d" % (is_anomaly, dark_pixel_count, PATCH_AREA),
+            #              fontdict=dict(color=color))
+            # plt.imshow(image)
+            # ax = plt.subplot(122)
+            # ax.set_title("1CH image accepted. %5.4f%%" % (dark_pixel_count / PATCH_AREA))
+            # plt.imshow(pilimage, cmap="gray")
+            # plt.show()
+            rejected['anomaly'] += 1
+        else:
+            rejected['normal'] += 1
         return True
     else:
+        if is_anomaly == "anomaly":
+            accepted['anomaly'] += 1
+        else:
+            accepted['normal'] += 1
         # ax = plt.subplot(121)
-        # ax.set_title("Accepted 3CH image. %d/%d" % (PATCH_AREA, dark_pixel_count))
+        # ax.set_title("'%s' 3CH image [ok]. %d/%d" % (is_anomaly, dark_pixel_count,PATCH_AREA))
         # plt.imshow(image)
         # ax = plt.subplot(122)
         # ax.set_title("1CH image. %5.4f%%" % (dark_pixel_count / PATCH_AREA))
@@ -80,8 +95,8 @@ def good_enough(img_p, mask_p):
     If all pixels are black or contains salt-n-pepper noise
     we can return False.
     """
-
-    is_black_image = is_mostly_black(img_p, threshold=30, percent=0.99)
+    is_anomaly = int(np.max(mask_p)) > 3
+    is_black_image = is_mostly_black(img_p, is_anomaly, threshold=30, percent=0.99)
     return not is_black_image
 
 
@@ -161,8 +176,8 @@ def create_patch_dataset():
                 # it's a normal image
                 if not box_intersect(box_dict["HUMAN"], patch_loc):
                     continue
-                if not good_enough(img_p, mask_p):
-                    continue
+            if not good_enough(img_p, mask_p):
+                continue
             img_p = img_p.copy()
             mask_p = mask_p.copy()
             # ignore a patch with all [black pixels]
@@ -218,6 +233,8 @@ def create_patch_dataset():
     atz_patch_dataset_df.to_csv(patch_dataset_csv)
     # print("Files are saved @", str(patch_image_save_path))
     print("Metadata @", patch_dataset_csv, len(atz_patch_dataset_df), "items")
+    print("accepted", accepted)
+    print("rejected", rejected)
 
 
 if __name__ == '__main__':
