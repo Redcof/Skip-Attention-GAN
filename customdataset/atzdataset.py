@@ -71,12 +71,13 @@ class ATZDataset(Dataset):
         self.normal_count = (len(self) - abnormal_count)
         self.abnormal_count = abnormal_count
         msg = "Mode %s => Normal:Abnormal = %d:%d" % (self.phase, self.normal_count, self.abnormal_count)
-        print(msg)
         # debug check
         if self.phase == "train":
             assert abnormal_count == 0, "%s\nAbnormal data not allowed in train dataset." % msg
         if self.phase == "test":
             assert abnormal_count != 0, "%s\nNo abnormal data found in test test" % msg
+        # pd.set_option("display.max_colwidth", None)
+        # print("DF", self.phase, self.df[["image", "x1x2y1y2"]])
 
     def label_transform_default(self, image, label, anomaly_size_px):
         """ This label transform is designed for SAGAN.

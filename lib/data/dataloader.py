@@ -9,8 +9,10 @@ import ast
 import os
 import pathlib
 
+import matplotlib.pyplot as plt
 import pywt
 import torch
+from PIL import Image
 from torchvision import transforms
 from torch.utils.data import DataLoader
 from torchvision.datasets import MNIST, CIFAR10, ImageFolder
@@ -18,6 +20,7 @@ from torchvision.datasets import MNIST, CIFAR10, ImageFolder
 from customdataset.atzdataset import ATZDataset
 from lib.data.datasets import get_cifar_anomaly_dataset
 from lib.data.datasets import get_mnist_anomaly_dataset
+from preprocessing.wavelet_transform import wavelet_denoise_rgb
 
 
 class Data:
@@ -105,9 +108,10 @@ def load_data(opt):
         PATCH_AREA = patchsize ** 2
 
         def wavelet_transform(x):
-            # https://www.mathworks.com/help/wavelet/referencelist.html?type=function&category=denoising&s_tid=CRUX_topnav
-            #
-            w = pywt.Wavelet('bior4.4')
+            # image = transforms.ToPILImage()(x)??
+            # x = wavelet_denoise_rgb(image, wavelet='bior4.4', method='VisuShrink', channel_axis=2,
+            #                         decomposition_level=2,
+            #                         threshold_mode='soft')
             return x
 
         def label_transform(image, label, anomaly_size_px):
@@ -129,10 +133,11 @@ def load_data(opt):
             else:
                 return abnormal
 
-        transform = transforms.Compose([transforms.Resize((opt.isize, opt.isize)),
-                                        transforms.ToTensor(),
-                                        transforms.Normalize((0.5,), (0.5,)), ])
-
+        transform = transforms.Compose([
+            transforms.Resize((opt.isize, opt.isize)),
+            transforms.ToTensor(),
+            transforms.Normalize((0.5,), (0.5,)),
+        ])
         train_ds = ATZDataset(patch_dataset_csv, opt.dataroot, "train",
                               atz_dataset_train_or_test_txt=train_dataset_txt,
                               device=device,

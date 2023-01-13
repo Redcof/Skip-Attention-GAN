@@ -194,13 +194,14 @@ class BaseModel():
             self.total_steps += self.opt.batchsize
             epoch_iter += self.opt.batchsize
 
+            string = None
             if self.opt.dataset == "atz":
                 meta = data[1]
                 string = ""
-                for current_file, x1, x2, y1, y2, label_txt in zip(
+                for idx, (current_file, x1, x2, y1, y2, label_txt) in enumerate(zip(
                         meta['current_file'], meta['x1'], meta['x2'], meta['y1'], meta['y2'], meta['label_txt']
-                ):
-                    string = "%s[%s, %s(%d,%d,%d,%d)]\n" % (string, current_file, label_txt, x1, x2, y1, y2)
+                )):
+                    string = "%s%d[%s, %s(%d,%d,%d,%d)]\n" % (string, idx + 1, current_file, label_txt, x1, x2, y1, y2)
                 data = data[0]
 
             self.set_input(data)
