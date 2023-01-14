@@ -83,7 +83,7 @@ def wavelet_denoise_rgb(image, channel_axis, wavelet='bior4.4', method='VisuShri
     # deno_scaled_img values between [0-1]
     # rescale back the de-noised image to [0-255] space
     diff = np.max(deno_scaled_img) - np.min(deno_scaled_img)
-    diff = 0.0000000001 if diff == 0 else diff
+    diff = 0.0000000001 if int(diff) == 0 else diff
     image = ((deno_scaled_img - np.min(deno_scaled_img)) * 255) / diff
     return image.astype('uint8')
 

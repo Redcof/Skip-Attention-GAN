@@ -91,7 +91,7 @@ class Options:
                                  default="{'wavelet':'sym4', 'method':'VisuShrink','level':1, 'mode':'soft'}",
                                  help='required. csv file path for atz patch dataset')
         self.parser.add_argument('--atz_patch_overlap', default=0.2, help='Patch overlap')
-        self.parser.add_argument('--atz_wavelet_denoise', action="store_true", default=False,
+        self.parser.add_argument('--atz_wavelet_denoise', action="store_true",
                                  help='Flag to perform wavelet based denoise')
         self.parser.add_argument('--atz_train_txt', default=None, help='optional. text file path for atz '
                                                                        'train file dataset')

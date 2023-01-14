@@ -58,13 +58,74 @@ AnamolyScore=
     75%=	?
     max=	?
 
-[exp_2]
+[abl_11]
+Excluded all patches:
+    [normal]  outsize of HUMAN area or overlap < 10%,
+    [normal]  patch with 99% dark-pixels with color <=30 excluded
+    [abnormal]  patch with 99% dark-pixels with color <=30 excluded
+Dataset 'train' => Normal:Abnormal = 24:0
+Dataset 'test' => Normal:Abnormal = 1:23
+area_threshold: 0.05
+atz_ablation: 24
+atz_classes: ["KK", "CK", "CL", "MD", "SS", "GA"]
+atz_patch_db: customdataset/atz/atz_patch_dataset__3_128_36_v2_10%_30_99%.csv
+atz_patch_overlap: 0.2
+atz_subjects: ['F1', 'M1', 'F2', 'M2']
+atz_test_txt: None
+atz_train_txt: None
+atz_wavelet: {'wavelet':'sym4', 'method':'VisuShrink','level':1, 'mode':'soft'}
+atz_wavelet_denoise: False
+batchsize=8
+epoch=20
+patch=128
+AUC=100%
+AnamolyScore=
+    avg=	?
+    std=	?
+    min=	?
+    25%=	?
+    50%=	?
+    75%=	?
+    max=	?
+
+[abl_12]
+Excluded all patches:
+    [normal]  outsize of HUMAN area or overlap < 10%,
+    [normal]  patch with 99% dark-pixels with color <=30 excluded
+    [abnormal]  patch with 99% dark-pixels with color <=30 excluded
+Dataset 'train' => Normal:Abnormal = 24:0
+Dataset 'test' => Normal:Abnormal = 1:23
+area_threshold: 0.05
+atz_ablation: 24
+atz_classes: ["KK", "CK", "CL", "MD", "SS", "GA"]
+atz_patch_db: customdataset/atz/atz_patch_dataset__3_128_36_v2_10%_30_99%.csv
+atz_patch_overlap: 0.2
+atz_subjects: ['F1', 'M1', 'F2', 'M2']
+atz_test_txt: None
+atz_train_txt: None
+atz_wavelet: {'wavelet':'sym4', 'method':'VisuShrink','level':1, 'mode':'soft'}
+atz_wavelet_denoise: True
+batchsize=8
+epoch=20
+patch=128
+AUC=0.957
+AnamolyScore=
+    avg=	?
+    std=	?
+    min=	?
+    25%=	?
+    50%=	?
+    75%=	?
+    max=	?
+
+
+[exp_4]
 Excluded all patches:
     [normal]  outsize of HUMAN area or overlap < 10%,
     [normal]  patch with 99% dark-pixels with color <=30 excluded
     [abnormal]  patch with 99% dark-pixels with color <=30 excluded
 Dataset 'train' => Normal:Abnormal = 34595:0
-Dataset 'test' => Normal:Abnormal = 34824:1068
+Dataset 'test' => Normal:Abnormal = 34806:1048
 threat_area threshold = 5%
 atz_classes: ["KK", "CK", "CL", "MD", "SS", "GA"]
 atz_subjects: ['F1', 'M1', 'F2', 'M2']

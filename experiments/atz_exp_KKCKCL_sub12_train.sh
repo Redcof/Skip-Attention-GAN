@@ -21,7 +21,7 @@ export DATA_ROOT="/mnt/c/Users/dndlssardar/Downloads/THZ_dataset_det_VOC/JPEGIma
 python train.py \
   --phase train \
   \
-  --name exp3_train_128x128_20230113 \
+  --name exp4_train_128x128_20230114 \
   --model skipattentionganomaly \
   \
   --dataroot "$DATA_ROOT" \
@@ -46,7 +46,7 @@ python train.py \
   --iter 0 \
   \
   --save_image_freq 50 \
-  --print_freq 1
+  --print_freq 50
 
 echo "Training done."
 date
