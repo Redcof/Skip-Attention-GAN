@@ -79,3 +79,4 @@ imageio
 plotly
 opencv-python
 shapely
+scikit-image==0.19.3
