@@ -10,26 +10,14 @@ import time
 import numpy as np
 from tqdm import tqdm
 
-from torch.autograd import Variable
-import torch.optim as optim
-import torch.nn as nn
 import torch.utils.data
 import torchvision.utils as vutils
 
-from lib.models.networks import NetD, weights_init, define_G, define_D, get_scheduler
+from lib.models.networks import weights_init
 from lib.visualizer import Visualizer
-from lib.loss import l2_loss
-from lib.evaluate import roc
-import pandas as pd
-import seaborn as sns
-import matplotlib.pyplot as plt
-
-from PIL import Image
 
 from options import Options
 
-
-# from lib import GradCAMplus
 
 class BaseModel():
     """ Base Model for ganomaly
@@ -198,10 +186,10 @@ class BaseModel():
             if self.opt.dataset == "atz":
                 meta = data[1]
                 string = ""
-                for idx, (current_file, x1, x2, y1, y2, label_txt) in enumerate(zip(
-                        meta['current_file'], meta['x1'], meta['x2'], meta['y1'], meta['y2'], meta['label_txt']
+                for idx, (current_file, patch_id, label_txt) in enumerate(zip(
+                        meta['current_file'], meta['patch_id'], meta['label_txt']
                 )):
-                    string = "%s%d[%s, %s(%d,%d,%d,%d)]\n" % (string, idx + 1, current_file, label_txt, x1, x2, y1, y2)
+                    string = "%s%d.[%s, %s idx:%d]\n" % (string, idx + 1, current_file, label_txt, patch_id)
                 data = data[0]
 
             self.set_input(data)

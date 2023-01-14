@@ -6,7 +6,6 @@ from collections import OrderedDict
 import os
 import time
 import numpy as np
-from tqdm import tqdm
 
 import torch.optim as optim
 import torch.nn as nn
@@ -14,11 +13,9 @@ import torch.utils.data
 import torchvision.utils as vutils
 
 import pandas as pd
-import seaborn as sns
 import matplotlib.pyplot as plt
 
-from lib.models.networks import NetD, weights_init, define_G, define_D, get_scheduler
-from lib.visualizer import Visualizer
+from lib.models.networks import define_G, define_D, get_scheduler
 from lib.loss import l2_loss
 from lib.evaluate import roc
 from lib.models.basemodel import BaseModel
@@ -247,8 +244,9 @@ class Skipattentionganomaly(BaseModel):
             self.times = np.mean(self.times[:100] * 1000)
 
             # Scale error vector between [0, 1]
-            self.an_scores = (self.an_scores - torch.min(self.an_scores)) / \
-                             (torch.max(self.an_scores) - torch.min(self.an_scores))
+            self.an_scores = (self.an_scores - torch.min(self.an_scores)) / (
+                    torch.max(self.an_scores) - torch.min(self.an_scores)
+                    + torch.tensor(0.000000001, dtype=torch.float32, device=self.device))
             saveto = os.path.join(self.opt.outf, self.opt.name, self.opt.phase)
             # auc = evaluate(self.gt_labels, self.an_scores, metric=self.opt.metric)
             auc = roc(self.gt_labels, self.an_scores)

@@ -62,7 +62,7 @@ def universal_threshold(x, coeff, level):
     # D.L. Donoho and I.M. Johnstone. Ideal Spatial Adaptation via Wavelet Shrinkage. Biometrika.
     # Vol. 81, No. 3, pp.425-455, 1994.
     # DOI:10.1093/biomet/81.3.425
-    # https://www.hindawi.com/journals/mpe/2015/280251/
+    # CONCEPT: https://www.hindawi.com/journals/mpe/2015/280251/
     # universal threshold lambda = sigma*sqrt(2 log(N))
     # where
     # sigma: is the average variance of the noise and
@@ -72,18 +72,20 @@ def universal_threshold(x, coeff, level):
     return uthresh
 
 
-def wavelet_denoise_rgb(image, wavelet='bior4.4', method='VisuShrink', channel_axis=2, decomposition_level=2,
-                        threshold_mode='soft'):
-    # D.L. Donoho and I.M. Johnstone. Ideal Spatial Adaptation via Wavelet Shrinkage. Biometrika.
-    # Vol. 81, No. 3, pp.425-455, 1994.
-    # DOI:10.1093/biomet/81.3.425
-    # https://www.hindawi.com/journals/mpe/2015/280251/
+def wavelet_denoise_rgb(image, channel_axis, wavelet='bior4.4', method='VisuShrink',
+                        decomposition_level=2, threshold_mode='soft'):
+    # CODE: https://www.exptech.co.in/2021/03/in-this-video-wavelet-transform-based.html
     sigma = estimate_sigma(image, average_sigmas=True, channel_axis=channel_axis)
-    denoised_x = denoise_wavelet(image, sigma=sigma, wavelet=wavelet, mode=threshold_mode,
-                                 wavelet_levels=decomposition_level, channel_axis=channel_axis,
-                                 convert2ycbcr=True, method=method,
-                                 rescale_sigma=True)
-    return denoised_x
+    deno_scaled_img = denoise_wavelet(image, sigma=sigma, wavelet=wavelet, mode=threshold_mode,
+                                      wavelet_levels=decomposition_level, channel_axis=channel_axis,
+                                      convert2ycbcr=True, method=method,
+                                      rescale_sigma=True)
+    # deno_scaled_img values between [0-1]
+    # rescale back the de-noised image to [0-255] space
+    diff = np.max(deno_scaled_img) - np.min(deno_scaled_img)
+    diff = 0.0000000001 if diff == 0 else diff
+    image = ((deno_scaled_img - np.min(deno_scaled_img)) * 255) / diff
+    return image.astype('uint8')
 
 
 if __name__ == '__main__':
@@ -91,20 +93,38 @@ if __name__ == '__main__':
     file = "T_P_M6_MD_F_LL_CK_F_C_WB_F_RT_front_0906154134.jpg"
     img_bgr = cv2.imread(os.path.join(root, file))
     img_rgb = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2RGB)
-    wavelets = ['sym20', 'bior4.4', 'db']
+    decomp_ = [1, 3]
+    method_ = ["BayesShrink", "VisuShrink"]
+    mode_ = ["soft", "hard"]
+    wavelets = ['sym4', 'bior4.4']
     plt.show()
     print(pywt.wavelist())
-    cols = 4
-    rows = (len(wavelets) + 1) // cols
+    cols = 6
+    rows = (len(wavelets) * len(mode_) * len(method_) * len(decomp_) + 1) // cols
+
+    plt.figure(figsize=[21, rows * 2])
     ax = plt.subplot(rows, cols, 1)
     plt.imshow(img_rgb)
     ax.set_title("Original")
-    for idx, wv in enumerate(wavelets):
-        try:
-            denos_img = wavelet_denoise_rgb(img_rgb.copy(), wavelet=wv, decomposition_level=20)
-            ax = plt.subplot(rows, cols, idx + 2)
-            plt.imshow(denos_img)
-            ax.set_title(wv)
-        except:
-            ...
+    idx = 1
+    for lv in decomp_:
+        for wv in wavelets:
+            for mo in mode_:
+                for me in method_:
+                    try:
+                        denos_img = wavelet_denoise_rgb(img_rgb.copy(),
+                                                        channel_axis=2,
+                                                        wavelet=wv,
+                                                        method=me,
+                                                        threshold_mode=mo,
+                                                        decomposition_level=lv)
+                        ax = plt.subplot(rows, cols, idx + 1)
+                        idx += 1
+                        txt = "%s,%s,%s,%d" % (wv, mo, me, lv)
+                        cv2.imshow(txt, denos_img)
+                        plt.imshow(denos_img)
+                        ax.set_title("%s,%s,%s,%d" % (wv, mo, me, lv))
+
+                    except:
+                        ...
     plt.show()

@@ -1,5 +1,4 @@
 import platform
-import time
 from collections import defaultdict
 
 import numpy as np
@@ -109,12 +108,11 @@ def is_mostly_black(image, is_anomaly, threshold, percent):
         return False
 
 
-def good_enough(img_p, mask_p):
+def good_enough(img_p, is_anomaly):
     """
     If all pixels are black or contains salt-n-pepper noise
     we can return False.
     """
-    is_anomaly = int(np.max(mask_p)) > 3
     is_black_image = is_mostly_black(img_p, is_anomaly, threshold=30, percent=0.99)
     return not is_black_image
 
@@ -140,54 +138,10 @@ def box_intersect(main_box_x1y1x2y2, subject_box_x1y1x2y2):
 def create_patch_dataset():
     # select image and annotation
     image_files = os.listdir(image_root)
-    image_files = [
-        "S_N_M2_LW_L_LA_back_0904130340.jpg",
-        "S_N_M1_CK_R_RA_front_0903162351.jpg",
-        "S_N_M2_CK_F_LT_WB_V_N_front_0904101206.jpg",
-        "S_N_F2_WB_L_LT_front_0907154552.jpg",
-        "S_N_M1_WB_R_RT_back_0903162719.jpg",
-        "D_N_M2_CL_F_RT_LW_F_LT_front_0904131009.jpg",
-        "S_N_F2_KK_F_LL_GA_V_N_front_0907143804.jpg",
-        "T_N_F2_LW_F_LT_GA_F_S_SS_F_RT_front_0907160748.jpg",
-        "S_N_M1_CP_F_C_KC_V_RL_back_0903151132.jpg",
-        "S_N_M2_MD_F_RA_SS_V_LA_front_0904092959.jpg",
-        "S_P_M1_KK_F_C_GA_V_B_front_0903125100.jpg",
-        "S_P_F1_CK_R_LL_front_0907111656.jpg",
-        "S_P_M1_SS_F_LL_MD_V_RL_front_0903133104.jpg",
-        "S_P_M2_KC_F_RA_CP_V_LA_front_0904101524.jpg",
-        "S_P_F2_WB_F_LT_CK_V_LL_back_0907150139.jpg",
-        "S_P_M1_MD_F_C_SS_V_W_front_0903131310.jpg",
-        "S_P_M2_KK_F_S_GA_V_N_back_0904085354.jpg",
-        "S_P_F2_KK_F_C_GA_V_W_back_0907143654.jpg",
-        "S_P_F2_KK_F_RL_GA_V_N_front_0907143831.jpg",
-        "T_P_F2_KC_F_RL_CP_F_LT_CL_F_LL_front_0907160623.jpg",
-    ]
     atz_patch_dataset_df = pd.DataFrame()
     for image_name in tqdm(image_files):
         if not any([c in image_name for c in atz_classes[atz_ignore_cls_idx_lim + 1:]]):
             continue
-        dbg_bounds = [
-            (618, 746, 103, 231),
-            (103, 231, 0, 128),
-            (752, 880, 103, 231),
-            (752, 880, 0, 128),
-            (721, 849, 206, 334),
-            (103, 231, 206, 334),
-            (515, 643, 206, 334),
-            (309, 437, 0, 128),
-            (721, 849, 103, 231),
-            (412, 540, 207, 335),
-            (412, 540, 103, 231),
-            (721, 849, 103, 231),
-            (721, 849, 206, 334),
-            (0, 128, 0, 128),
-            (618, 746, 0, 128),
-            (206, 334, 103, 231),
-            (412, 540, 103, 231),
-            (515, 643, 206, 334),
-            (618, 746, 103, 231),
-            (721, 849, 103, 231),
-        ][image_files.index(image_name)]
         # image_name = 'S_N_M2_LW_L_LA_back_0904130340.jpg'
         voc_xml = voc_root / image_name.replace(".jpg", ".xml")
         base, data = parsing_filename(str(voc_root), image_name.replace(".jpg", ".xml"))
@@ -243,22 +197,11 @@ def create_patch_dataset():
 
             # class name
             label_txt = atz_classes[class_index]
-            if dbg_bounds == patch_loc:
-                flg = is_mostly_black(img_p, True, threshold=25, percent=0.99)
-                flg2 = is_enough_contrast(img_p, True, threshold=25, percent=0.99)
-                # im = img_p.copy() - 0.5 / 0.5
-                # ax = plt.subplot(2, 1, 1)
-                # plt.imshow(im)
-                # plt.subplot(2, 1, 2)
-                plt.imshow(img_p)
-                plt.title("%d : %s dark:%s contrast:%s" % (image_files.index(image_name), label_txt, flg, flg2))
-                plt.show()
-                # print("Match")
             if max_val == 0:
                 # it's a normal image
                 if not box_intersect(box_dict["HUMAN"], patch_loc):
                     continue
-            if not good_enough(img_p, mask_p):
+            if not good_enough(img_p, class_index > 3):
                 continue
 
             # if class_index >= 3:
@@ -298,7 +241,6 @@ def create_patch_dataset():
         # update dataframe
         df_dictionary = pd.DataFrame(dictionary_ls)
         atz_patch_dataset_df = pd.concat([atz_patch_dataset_df, df_dictionary], ignore_index=True)
-    return
     # save csv
     postfix = "_%d_%d_%d" % (atz_ignore_cls_idx_lim + 1, patch_size, len(indices))
     patch_dataset_csv = str(dataset_save_path / ("atz_patch_dataset_%s.csv" % postfix))

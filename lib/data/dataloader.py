@@ -7,10 +7,8 @@ LOAD DATA from file.
 ##
 import ast
 import os
-import pathlib
 
-import matplotlib.pyplot as plt
-import pywt
+import numpy as np
 import torch
 from PIL import Image
 from torchvision import transforms
@@ -73,17 +71,6 @@ def load_data(opt):
     ## ATZ
     elif opt.dataset in ['atz']:
         assert os.path.exists(opt.atz_patch_db)  # mandatory for ATZ
-        # assert os.path.exists(opt.atz_test_txt)  # mandatory for ATZ
-        # assert os.path.exists(opt.atz_train_txt)  # mandatory for ATZ
-
-        # dataroot = pathlib.Path("/Users/soumen/Desktop/Skip-Attention-GAN/")
-        # d = {
-        #     128: "customdataset/patch_atz/atz_patch_dataset__3_128_36.csv",
-        #     64: "customdataset/patch_atz/atz_patch_dataset__3_64_119.csv"
-        # }
-        # patch_dataset_csv = str(dataroot / d[opt.isize])
-        # train_dataset_txt = str(dataroot / "customdataset/atz/atz_dataset_train_ablation_5.txt")
-        # test_dataset_txt = str(dataroot / "customdataset/atz/atz_dataset_test_ablation_5.txt")
 
         patch_dataset_csv = opt.atz_patch_db
         train_dataset_txt = opt.atz_train_txt
@@ -103,15 +90,33 @@ def load_data(opt):
         except ValueError:
             atz_subjects = []
 
+        try:
+            atz_wavelet = ast.literal_eval(opt.atz_wavelet)
+        except ValueError:
+            atz_wavelet = {'wavelet': 'sym4', 'method': 'VisuShrink', 'level': 1, 'mode': 'soft'}
+
         object_area_threshold = opt.area_threshold  # 10%
         patchsize = opt.isize
         PATCH_AREA = patchsize ** 2
 
         def wavelet_transform(x):
-            # image = transforms.ToPILImage()(x)??
-            # x = wavelet_denoise_rgb(image, wavelet='bior4.4', method='VisuShrink', channel_axis=2,
-            #                         decomposition_level=2,
-            #                         threshold_mode='soft')
+            is_converted = False
+            if isinstance(x, Image.Image):
+                # if PIL convert to numpy
+                is_converted = True
+                x = np.array(x)
+
+            x = wavelet_denoise_rgb(x,
+                                    channel_axis=2,
+                                    wavelet=atz_wavelet['wavelet'],  # 'sym4'
+                                    method=atz_wavelet['method'],  # 'VisuShrink',
+                                    decomposition_level=atz_wavelet['level'],  # 1
+                                    threshold_mode=atz_wavelet['mode']  # 'hard'
+                                    )
+
+            if is_converted:
+                # restore back to PIL if converted previously
+                x = Image.fromarray(x)
             return x
 
         def label_transform(image, label, anomaly_size_px):
@@ -138,26 +143,31 @@ def load_data(opt):
             transforms.ToTensor(),
             transforms.Normalize((0.5,), (0.5,)),
         ])
+
         train_ds = ATZDataset(patch_dataset_csv, opt.dataroot, "train",
                               atz_dataset_train_or_test_txt=train_dataset_txt,
                               device=device,
                               classes=atz_classes,
+                              patch_size=opt.isize,
+                              patch_overlap=opt.atz_patch_overlap,
                               subjects=atz_subjects,
                               ablation=atz_ablation,
                               transform=transform,
                               random_state=opt.manualseed,
                               label_transform=label_transform,
-                              wavelet_transform=wavelet_transform)
+                              global_wavelet_transform=wavelet_transform if opt.atz_wavelet_denoise else None)
         valid_ds = ATZDataset(patch_dataset_csv, opt.dataroot, "test",
                               atz_dataset_train_or_test_txt=test_dataset_txt,
                               device=device,
                               classes=atz_classes,
+                              patch_size=opt.isize,
+                              patch_overlap=opt.atz_patch_overlap,
                               subjects=atz_subjects,
                               ablation=atz_ablation,
                               transform=transform,
                               random_state=opt.manualseed,
                               label_transform=label_transform,
-                              wavelet_transform=wavelet_transform)
+                              global_wavelet_transform=wavelet_transform if opt.atz_wavelet_denoise else None)
         opt.log("Dataset '%s' => Normal:Abnormal = %d:%d" % ("train", train_ds.normal_count, train_ds.abnormal_count))
         opt.log("Dataset '%s' => Normal:Abnormal = %d:%d" % ("test", valid_ds.normal_count, valid_ds.abnormal_count))
 

@@ -1,28 +1,27 @@
 import ast
 import os
-import sys
 from collections import defaultdict
 import random
 
-import PIL
 import cv2
 import numpy as np
 import pandas as pd
 import torch
 from PIL import Image
-from matplotlib import pyplot as plt
+from empatches import EMPatches
 from torch.utils.data import Dataset
-from torchvision.io import read_image
+from torchvision.transforms import transforms
 
 
 class ATZDataset(Dataset):
-    CACHE_SIZE_BYTES = 1179200 * 2  # 10MB
+    CACHE_ITEM_LIMIT = 5  # 5 files
     NORMAL = 0
     ABNORMAL = 1
 
     def __init__(self, atz_patch_dataset_csv, img_dir, phase, atz_dataset_train_or_test_txt=None, transform=None,
                  classes=(), subjects=(), ablation=0, label_transform=None, device="cpu",
-                 wavelet_transform=lambda x: x, random_state=47):
+                 patch_size=128, patch_overlap=0.2,
+                 global_wavelet_transform=lambda x: x, random_state=47):
         if subjects is None:
             subjects = []
         self.phase = phase
@@ -33,9 +32,10 @@ class ATZDataset(Dataset):
         self.transform = transform
         # each key: image name, value: transformed image data
         self.cache_image = defaultdict(lambda: None)  # process optimization
-        self.one_image_size = 0  # bytes
         self.device = device
-        self.wavelet_transform = wavelet_transform
+        self.gbl_wavelet_transform = global_wavelet_transform
+        self.patch_size = patch_size
+        self.patch_overlap = patch_overlap
 
         def _lambda(record, **kwargs):
             return self.label_transform(record.image, record.label_txt, record.anomaly_size)
@@ -70,7 +70,7 @@ class ATZDataset(Dataset):
         abnormal_count = np.sum(self.df['is_anamoly'])
         self.normal_count = (len(self) - abnormal_count)
         self.abnormal_count = abnormal_count
-        msg = "Mode %s => Normal:Abnormal = %d:%d" % (self.phase, self.normal_count, self.abnormal_count)
+        msg = "Phase %s => Normal:Abnormal = %d:%d" % (self.phase, self.normal_count, self.abnormal_count)
         # debug check
         if self.phase == "train":
             assert abnormal_count == 0, "%s\nAbnormal data not allowed in train dataset." % msg
@@ -79,7 +79,8 @@ class ATZDataset(Dataset):
         # pd.set_option("display.max_colwidth", None)
         # print("DF", self.phase, self.df[["image", "x1x2y1y2"]])
 
-    def label_transform_default(self, image, label, anomaly_size_px):
+    @staticmethod
+    def label_transform_default(image, label, anomaly_size_px):
         """ This label transform is designed for SAGAN.
         Return 0 for normal images and 1 for abnormal images """
 
@@ -95,64 +96,78 @@ class ATZDataset(Dataset):
         record = self.df.iloc[idx, :]
         # read metadata
         current_file = record[["image"]].values[0]
+        patch_id = record[["patch_id"]].values[0]
         label_txt = record[["label_txt"]].values[0]
         x1, x2, y1, y2 = ast.literal_eval(record[["x1x2y1y2"]].values[0])
         anomaly_size = record[["anomaly_size"]].values[0]
         label = record[["is_anamoly"]].values[0]
+        # read image from cache
+        img_patches = self.get_cached_image(current_file)
+        img_p = img_patches[patch_id]
+        # is_good = good_enough(img_p, label)
+        # cv2.imshow("%s patch" % is_good, img_p)
+        # pilimage = Image.fromarray(np.uint8(img_p))
+        # pilimage.show("%s patch.PNG" % is_good)
 
         return dict(current_file=current_file, label_txt=label_txt, x1=x1, x2=x2, y1=y1, y2=y2,
-                    anomaly_size=anomaly_size, is_anomaly=label)
+                    anomaly_size=anomaly_size, is_anomaly=label, image_patch=img_p.copy(),
+                    patch_id=patch_id,
+                    #    mostly_dark=not is_good
+                    )
 
     def __getitem__(self, idx):
         """Read a patch and return the item"""
+        metadata = self.get_meta(idx)
         # read a record
-        record = self.df.iloc[idx, :]
+        # record = self.df.iloc[idx, :]
         # read metadata
-        current_file = record[["image"]].values[0]
-        # label_txt = record[["label_txt"]].values[0]
-        x1, x2, y1, y2 = ast.literal_eval(record[["x1x2y1y2"]].values[0])
-        # anomaly_size = record[["anomaly_size"]].values[0]
-        label = record[["is_anamoly"]].values[0]
-
+        # current_file = metadata["image"]
+        # label_txt = metadata["label_txt"]
+        # x1, x2, y1, y2 = metadata["x1"], metadata["x2"], metadata["y1"], metadata["y2"]
+        # anomaly_size = metadata["anomaly_size"]
+        label = metadata["is_anomaly"]
         # read image from cache
-        pilimage = self.get_cached_image(current_file)
-        image = pilimage.crop(box=(x1, y1, x2, y2))
-        # image.show()
+        image_patch = metadata['image_patch']
+        pil = Image.fromarray(image_patch.astype('uint8'))
         # transform image
         if self.transform:
-            image = self.transform(image)
+            tensor_img = self.transform(pil)
+        else:
+            tensor_img = transforms.ToTensor()(image_patch)
         # cv2.imshow("patch", image)
-        return (image.to(self.device), torch.tensor(label, dtype=torch.uint8).to(self.device)), self.get_meta(idx)
+        return (tensor_img.to(self.device), torch.tensor(label, dtype=torch.uint8).to(self.device)), metadata
 
     def cache_limit_check(self):
         """
         Adjust and randomly clear cache
         """
         items = len(self.cache_image.keys())
-        total_bytes = items * self.one_image_size
-        if total_bytes >= ATZDataset.CACHE_SIZE_BYTES:
+        if items == ATZDataset.CACHE_ITEM_LIMIT:
             # cache full remove item
             self.cache_image.pop(random.choice(list(self.cache_image.keys())))
 
     def get_cached_image(self, current_file):
         """
             Read or update image cache. Returns an image object.
-            return PIL image
+            return numpy image patches
         """
         # try to read image form cache
-        image = self.cache_image[current_file]
-        if image is None:
+        img_patches = self.cache_image[current_file]
+        if img_patches is None:
             # prepare image path
             img_path = os.path.join(self.img_dir, current_file)
             # read imagedata
-            image = Image.open(img_path)
+            image = cv2.imread(img_path)
             # convert to greyscale
             # image = image.convert("L")
-            image = self.wavelet_transform(image)
-            if self.one_image_size == 0:
-                self.one_image_size = 1179200
+            if self.gbl_wavelet_transform:
+                image = self.gbl_wavelet_transform(image)
+
+            # create patches
+            emp = EMPatches()
+            img_patches, indices = emp.extract_patches(image, patchsize=self.patch_size, overlap=self.patch_overlap)
             # check cache size
             self.cache_limit_check()
             # save image to cache
-            self.cache_image[current_file] = image
-        return image
+            self.cache_image[current_file] = img_patches
+        return img_patches
