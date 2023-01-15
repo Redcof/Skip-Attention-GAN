@@ -152,6 +152,7 @@ def load_data(opt):
                               patch_overlap=opt.atz_patch_overlap,
                               subjects=atz_subjects,
                               ablation=atz_ablation,
+                              balanced=True,
                               transform=transform,
                               random_state=opt.manualseed,
                               label_transform=label_transform,

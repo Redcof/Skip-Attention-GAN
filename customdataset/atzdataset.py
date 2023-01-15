@@ -27,6 +27,7 @@ class ATZDataset(Dataset):
                                                            "But both values "
                                                            "train_split=%f and test_split=%f are provided." % (
                                                                train_split, test_split))
+        assert phase in ["train", "test"], "Invalid phase value='%s'" % phase
         if train_split is None and test_split is None:
             self.train_split = 0.8
         elif test_split is not None:
@@ -111,10 +112,14 @@ class ATZDataset(Dataset):
             df_normal = df_normal.iloc[split_len:, :]
             norm_len = len(df_normal)
 
-        if self.balanced and self.phase == "test":
+        if self.balanced:
             if norm_len > abnormal_count:
-                df_normal = df_normal.sample(abnormal_count, random_state=self.random_state)
-                norm_len = len(df_normal)
+                if self.phase == "test":
+                    df_normal = df_normal.sample(abnormal_count, random_state=self.random_state)
+                    norm_len = len(df_normal)
+                else:
+                    df_normal = df_normal.sample(abnormal_count * 2, random_state=self.random_state)
+                    norm_len = len(df_normal)
 
         # concat normal and abnormal data
         self.df = pd.concat([df_abnormal, df_normal])
