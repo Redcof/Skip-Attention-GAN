@@ -18,7 +18,7 @@ from torchvision.datasets import MNIST, CIFAR10, ImageFolder
 from customdataset.atzdataset import ATZDataset
 from lib.data.datasets import get_cifar_anomaly_dataset
 from lib.data.datasets import get_mnist_anomaly_dataset
-from preprocessing.wavelet_transform import wavelet_denoise_rgb
+from preprocessing.image_transform import wavelet_denoise_rgb
 
 
 class Data:
@@ -107,12 +107,12 @@ def load_data(opt):
                 x = np.array(x)
 
             x = wavelet_denoise_rgb(x,
-                                    channel_axis=2,
-                                    wavelet=atz_wavelet['wavelet'],  # 'sym4'
-                                    method=atz_wavelet['method'],  # 'VisuShrink',
-                                    decomposition_level=atz_wavelet['level'],  # 1
-                                    threshold_mode=atz_wavelet['mode']  # 'hard'
-                                    )
+                                          channel_axis=2,
+                                          wavelet=atz_wavelet['wavelet'],  # 'bior6.8'
+                                          method=atz_wavelet['method'],  # 'VisuShrink',
+                                          decomposition_level=atz_wavelet['level'],  # 1
+                                          threshold_mode=atz_wavelet['mode']  # 'hard'
+                                          )
 
             if is_converted:
                 # restore back to PIL if converted previously

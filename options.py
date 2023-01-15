@@ -88,7 +88,7 @@ class Options:
         # ATZ dataset
         self.parser.add_argument('--atz_patch_db', default="", help='required. csv file path for atz patch dataset')
         self.parser.add_argument('--atz_wavelet',
-                                 default="{'wavelet':'sym4', 'method':'VisuShrink','level':1, 'mode':'soft'}",
+                                 default="{'wavelet':'sym4', 'method':'VisuShrink','level':3, 'mode':'hard'}",
                                  help='required. csv file path for atz patch dataset')
         self.parser.add_argument('--atz_patch_overlap', default=0.2, help='Patch overlap')
         self.parser.add_argument('--atz_wavelet_denoise', action="store_true",
