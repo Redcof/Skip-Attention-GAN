@@ -112,3 +112,6 @@ If you use this repository or would like to refer the paper, please use the foll
   doi={10.1109/ICIP42928.2021.9506332}}
 ```
 
+# Mission Control
+
+`mission_control.ini` is available to manage the training loop after started.

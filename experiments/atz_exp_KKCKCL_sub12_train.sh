@@ -24,14 +24,13 @@ export DATA_ROOT="/mnt/c/Users/dndlssardar/Downloads/THZ_dataset_det_VOC/JPEGIma
 python train.py \
   --phase train \
   \
-  --name exp7_train_128x128_20230114 \
+  --name exp8_train_128x128_20230114 \
   --model skipattentionganomaly \
   \
   --dataroot "$DATA_ROOT" \
   --dataset atz \
   --atz_patch_db customdataset/atz/atz_patch_dataset__3_128_36_v2_10%_30_99%.csv \
   --area_threshold 0.05 \
-  --atz_subjects "['F1', 'M1', 'F2', 'M2']" \
   --atz_classes "['KK', 'CK', 'CL', 'MD', 'SS', 'GA']" \
   --atz_wavelet "{'wavelet':'sym4', 'method':'VisuShrink','level':3, 'mode':'hard'}" \
   --manualseed 47 \
@@ -48,8 +47,8 @@ python train.py \
   --niter 25 \
   --iter 0 \
   \
-  --save_image_freq 256 \
-  --print_freq 256 --atz_wavelet_denoise
+  --save_image_freq 1280 \
+  --print_freq 1280 --atz_wavelet_denoise
 
 echo "Training done."
 date
