@@ -30,7 +30,6 @@ def main():
     opt.log("Experiment Start:%s" % dt_string_start)
     # Load Data
     data = load_data(opt)
-    exit()
     # Load Model
     model = load_model(opt, data)
     now = datetime.now()

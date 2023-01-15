@@ -23,20 +23,21 @@ class ATZDataset(Dataset):
                  patch_size=128, patch_overlap=0.2, balanced=False,
                  train_split=None, test_split=None,
                  global_wavelet_transform=lambda x: x, random_state=47):
-        assert train_split is not None and test_split is not None, ("Either of train_split and test_split is required."
-                                                                    "But both values "
-                                                                    "train_split=%f and test_split=%f are provided." % (
-                                                                        train_split, test_split))
+        assert train_split is None or test_split is None, ("Either of train_split and test_split is required."
+                                                           "But both values "
+                                                           "train_split=%f and test_split=%f are provided." % (
+                                                               train_split, test_split))
         if train_split is None and test_split is None:
-            train_split = 0.8
+            self.train_split = 0.8
         elif test_split is not None:
-            train_split = 1 - test_split
+            self.train_split = 1 - test_split
         if subjects is None:
             subjects = []
-        self.phase = phase
+        # label transformation function
         if label_transform is None:
             label_transform = self.label_transform_default
         self.label_transform = label_transform
+        self.phase = phase
         self.img_dir = img_dir
         self.transform = transform
         # each key: image name, value: transformed image data
@@ -45,62 +46,75 @@ class ATZDataset(Dataset):
         self.gbl_wavelet_transform = global_wavelet_transform
         self.patch_size = patch_size
         self.patch_overlap = patch_overlap
+        self.random_state = random_state
+        self.balanced = balanced
+        self.normal_count = 0
+        self.abnormal_count = 0
+        # read CSV
+        self.df = pd.read_csv(atz_patch_dataset_csv)
+        self.filter(atz_dataset_train_or_test_txt, classes, subjects)
+        self.shuffle()
+        self.ablation = ablation
 
         def _lambda(record, **kwargs):
             return self.label_transform(record.image, record.label_txt, record.anomaly_size)
 
+        # perform label-transform
+        self.df['is_anamoly'] = self.df.apply(_lambda, axis=1)
+
+        self.split()
+
+    def shuffle(self):
+        # shuffle dataframe
+        self.df = self.df.sample(frac=1, random_state=self.random_state)
+        # shuffle dataframe again
+        self.df = self.df.sample(frac=1, random_state=self.random_state + 1)
+
+    def filter(self, atz_dataset_train_or_test_txt, classes, subjects):
         # read trainable/testable files names for the experiment
         file_names = []
         if atz_dataset_train_or_test_txt:
             with open(atz_dataset_train_or_test_txt, "r") as fp:
                 file_names = [line.strip() for line in fp.readlines()]
-        self.df = pd.read_csv(atz_patch_dataset_csv)
         if file_names:
             # filter dataframe
             self.df = self.df[self.df["image"].isin(file_names)]
         if classes:
-            if phase == "test":
+            if self.phase == "test":
                 self.df = self.df[self.df['label_txt'].isin(classes)]
-            elif phase == "train":
+            elif self.phase == "train":
                 self.df = self.df[self.df['label_txt'].isin(["NORMAL0", "NORMAL1"])]
         if subjects:
             self.df = self.df[self.df['subject_id'].isin(subjects)]
 
-        # shuffle dataframe
-        self.df = self.df.sample(frac=1, random_state=random_state)
-        # shuffle dataframe again
-        self.df = self.df.sample(frac=1, random_state=random_state + 1)
-
-        if ablation:
-            if self.phase == "train":
-                self.df = self.df[(self.df['threat_present'] == 0) &
-                                  (self.df['anomaly_size'] == 0)].sample(ablation, random_state=random_state)
-            elif self.phase == "test":
-                self.df = self.df[(self.df['threat_present'] == 1) &
-                                  (self.df['anomaly_size'] > 0)].sample(ablation, random_state=random_state)
-        # perform label-transform
-        self.df['is_anamoly'] = self.df[['image', 'label_txt', 'anomaly_size']].apply(_lambda, axis=1)
-        self.balanced, self.random_state = balanced, random_state
-        self.normal_count = 0
-        self.abnormal_count = 0
-        self.split()
-
     def split(self):
         df_abnormal = self.df[self.df["is_anamoly"] == 1]
         df_normal = self.df[self.df["is_anamoly"] == 0]
+        if self.ablation:
+            test_items = self.ablation * self.train_split
+            train_items = self.ablation / (1 - self.train_split)
+            items = int(test_items + train_items)
+            # select total normal samples for train and test
+            df_normal = df_normal.sample(items, random_state=self.random_state)
+            if self.phase == "test":
+                # select abnormal samples for testing
+                df_abnormal = df_abnormal.sample(self.ablation, random_state=self.random_state)
+
         abnormal_count = len(df_abnormal)
         norm_len = len(df_normal)
         # split dataframe into train and test
+        split_len = int(norm_len * self.train_split)
         if self.phase == "train":
-            df_normal = df_normal.iloc[:int(norm_len * self.train_split)]
+            df_normal = df_normal.iloc[:split_len, :]
             norm_len = len(df_normal)
         else:
-            df_normal = df_normal.iloc[int(norm_len * self.train_split):]
+            df_normal = df_normal.iloc[split_len:, :]
             norm_len = len(df_normal)
 
         if self.balanced and self.phase == "test":
-            df_normal = df_normal.sample(abnormal_count, random_state=self.random_state)
-            norm_len = len(df_normal)
+            if norm_len > abnormal_count:
+                df_normal = df_normal.sample(abnormal_count, random_state=self.random_state)
+                norm_len = len(df_normal)
 
         # concat normal and abnormal data
         self.df = pd.concat([df_abnormal, df_normal])
