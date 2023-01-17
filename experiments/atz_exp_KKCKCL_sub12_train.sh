@@ -30,6 +30,7 @@ python train.py \
   --dataroot "$DATA_ROOT" \
   --dataset atz \
   --atz_patch_db customdataset/atz/atz_patch_dataset__3_128_36_v2_10%_30_99%.csv \
+  --atz_test_txt customdataset/atz/train.txt \
   --area_threshold 0.05 \
   --atz_classes "['KK', 'CK', 'CL', 'MD', 'SS', 'GA']" \
   --atz_wavelet "{'wavelet':'sym4', 'method':'VisuShrink','level':3, 'mode':'hard'}" \

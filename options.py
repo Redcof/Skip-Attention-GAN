@@ -70,7 +70,8 @@ class Options:
                                  help='frequency of saving real and fake images (per image).')
         self.parser.add_argument('--save_test_images', default='true', action='store_true',
                                  help='Save test images for demo (per image).')
-        self.parser.add_argument('--load_weights', action='store_true', help='Load the pretrained weights')
+        self.parser.add_argument('--load_weights', default="", help='Load the pretrained weights from a path. '
+                                                                    'The directory must contain NetG and NetD')
         self.parser.add_argument('--resume', default='', help="path to checkpoints (to continue training)")
         self.parser.add_argument('--phase', type=str, default='train', help='train, val, test, etc')
         self.parser.add_argument('--iter', type=int, default=0, help='Start from iteration i')

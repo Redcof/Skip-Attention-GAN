@@ -83,7 +83,6 @@ def load_data(opt):
             atz_classes = ast.literal_eval(opt.atz_classes)
         except ValueError:
             atz_classes = []
-        atz_classes.extend(NORMAL_CLASSES)
 
         try:
             atz_subjects = ast.literal_eval(opt.atz_subjects)

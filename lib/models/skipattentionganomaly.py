@@ -14,6 +14,7 @@ import torchvision.utils as vutils
 
 import pandas as pd
 import matplotlib.pyplot as plt
+from tqdm import tqdm
 
 from lib.models.networks import define_G, define_D, get_scheduler
 from lib.loss import l2_loss
@@ -180,7 +181,10 @@ class Skipattentionganomaly(BaseModel):
         with torch.no_grad():
             # Load the weights of netg and netd.
             if self.opt.load_weights:
-                self.load_weights(is_best=True)
+                if os.path.exists(self.opt.load_weights):
+                    self.load_weights(path=self.opt.load_weights)
+                else:
+                    self.load_weights(is_best=True)
 
             self.opt.phase = 'test'
 
@@ -196,7 +200,7 @@ class Skipattentionganomaly(BaseModel):
             self.times = []
             self.total_steps = 0
             epoch_iter = 0
-            for i, data in enumerate(self.data.valid, 0):
+            for i, data in enumerate(tqdm(self.data.valid, leave=False, total=len(self.data.valid)), 0):
                 self.total_steps += self.opt.batchsize
                 epoch_iter += self.opt.batchsize
                 time_i = time.time()

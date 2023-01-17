@@ -4,6 +4,7 @@ import ast
 # pylint: disable=C0301,E1101,W0622,C0103,R0902,R0915
 
 ##
+import pathlib
 from collections import OrderedDict
 import os
 import time
@@ -146,7 +147,7 @@ class BaseModel():
             IOError -- [description]
         """
 
-        if epoch is None and is_best is False:
+        if epoch is None and is_best is False and path is None:
             raise Exception('Please provide epoch to be loaded or choose the best epoch.')
 
         if is_best:
@@ -159,11 +160,28 @@ class BaseModel():
         if path is None:
             path_g = f"./output/{self.name}/{self.opt.dataset}/train/weights/{fname_g}"
             path_d = f"./output/{self.name}/{self.opt.dataset}/train/weights/{fname_d}"
+        else:
+            path_g = None
+            path_d = None
+            weight_path = pathlib.Path(path)
+            files = os.listdir(str(weight_path))
+            for f in files:
+                if "netG" in f and path_g is None:
+                    path_g = str(pathlib.Path(path) / f)
+                if "netD" in f and path_d is None:
+                    path_d = str(pathlib.Path(path) / f)
+                if path_d is not None and path_g is not None:
+                    break
 
         # Load the weights of netg and netd.
         print('>> Loading weights...')
-        weights_g = torch.load(path_g)['state_dict']
-        weights_d = torch.load(path_d)['state_dict']
+        if torch.cuda.is_available():
+            weights_g = torch.load(path_g, )['state_dict']
+            weights_d = torch.load(path_d, )['state_dict']
+        else:
+            weights_g = torch.load(path_g, map_location=torch.device('cpu'))['state_dict']
+            weights_d = torch.load(path_d, map_location=torch.device('cpu'))['state_dict']
+
         try:
             self.netg.load_state_dict(weights_g)
             self.netd.load_state_dict(weights_d)
@@ -279,7 +297,7 @@ class BaseModel():
             self.times = []
             self.total_steps = 0
             epoch_iter = 0
-            for i, data in enumerate(self.data.valid, 0):
+            for i, data in enumerate(tqdm(self.data.valid, leave=False, total=len(self.data.valid)), 0):
                 self.total_steps += self.opt.batchsize
                 epoch_iter += self.opt.batchsize
                 time_i = time.time()
