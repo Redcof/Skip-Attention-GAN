@@ -87,6 +87,7 @@ class Options:
         self.parser.add_argument('--lr_decay_iters', type=int, default=50,
                                  help='multiply by a gamma every lr_decay_iters iterations')
         # ATZ dataset
+        self.parser.add_argument('--hist_csv', default=None, help='Path to exp_histogram.csv')
         self.parser.add_argument('--atz_patch_db', default="", help='required. csv file path for atz patch dataset')
         self.parser.add_argument('--atz_wavelet',
                                  default="{'wavelet':'sym4', 'method':'VisuShrink','level':3, 'mode':'hard'}",

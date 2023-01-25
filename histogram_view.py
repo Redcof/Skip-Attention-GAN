@@ -7,11 +7,13 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+from lib.data.dataloader import load_data
+from options import Options
 
-    parser.add_argument('hist_csv', default=None, help='Path to exp_histogram.csv')
-    opt = parser.parse_args()
+if __name__ == '__main__':
+    opt = Options().parser()
+
+    data_wrap = load_data(opt)
 
     filename = opt.hist_csv
     if filename is None or not os.path.exists(filename):
