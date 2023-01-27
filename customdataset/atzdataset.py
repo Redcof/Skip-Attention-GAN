@@ -226,7 +226,10 @@ class ATZDataset(Dataset):
 
             # create patches
             emp = EMPatches()
-            img_patches, indices = emp.extract_patches(image, patchsize=self.patch_size, overlap=self.patch_overlap)
+            # print("patch_size", type(self.patch_size), self.patch_size)
+            # print("patch_overlap", type(self.patch_overlap), self.patch_overlap)
+            img_patches, indices = emp.extract_patches(image, patchsize=int(self.patch_size),
+                                                       overlap=float(self.patch_overlap))
             # check cache size
             self.cache_limit_check()
             # save image to cache

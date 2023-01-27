@@ -107,9 +107,6 @@ class Skipattentionganomaly(BaseModel):
         """ Forward propagate through netG
         """
         # lgl
-        # print(self.noise.shape)
-        # print("DEVICES::", self.input.get_device(), self.noise.get_device(),
-        #       type(self.input), type(self.noise), type(self.netg))
         self.fake = self.netg(self.input + self.noise)
 
     def forward_d(self):

@@ -22,25 +22,23 @@ export DATA_ROOT="/mnt/c/Users/dndlssardar/Downloads/THZ_dataset_det_VOC/JPEGIma
 python train.py \
 --area_threshold 0.05 \
 --atz_ablation 0 \
---atz_classes "['KK', 'CK', 'CL', 'MD', 'SS', 'GA']" \
+--atz_classes "[]" \
 --atz_patch_db customdataset/atz/atz_patch_dataset__3_128_36_v2_10%_30_99%.csv \
 --atz_patch_overlap 0.2 \
 --atz_subjects "[]" \
---atz_test_txt None \
---atz_train_txt None \
 --atz_wavelet "{'wavelet':'sym4', 'method':'VisuShrink','level':3, 'mode':'hard'}" \
 --atz_wavelet_denoise \
 --batchsize 128 \
 --dataroot /mnt/c/Users/dndlssardar/Downloads/THZ_dataset_det_VOC/JPEGImages \
 --dataset atz \
---device gpu \
+--device cuda \
 --display \
 --isize 128 \
 --lr 0.0002 \
 --manualseed 47 \
 --metric roc \
 --model skipattentionganomaly \
---name exp10_128x128_20230114 \
+--name exp13_128x128_20230114 \
 --niter 25 \
 --outf ./output \
 --phase train \
@@ -48,6 +46,7 @@ python train.py \
 --save_image_freq 1280 \
 --save_test_images \
 --verbose \
-
+#--atz_train_txt customdataset/atz/train.txt \
+#--atz_test_txt  customdataset/atz/trest.txt \
 echo "Training done."
 date

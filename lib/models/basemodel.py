@@ -242,6 +242,9 @@ class BaseModel():
         self.total_steps = 0
         best_auc = 0
 
+        self.netg.to(self.opt.device)
+        self.netd.to(self.opt.device)
+
         # Train for niter epochs.
         print(f">> Training {self.name} on {self.opt.dataset} to detect {self.opt.abnormal_class}")
         for self.epoch in range(self.opt.iter, self.opt.niter):
