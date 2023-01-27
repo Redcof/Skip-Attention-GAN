@@ -54,7 +54,6 @@ class ATZDataset(Dataset):
         # read CSV
         self.df = pd.read_csv(atz_patch_dataset_csv)
         self.filter(atz_dataset_train_or_test_txt, classes, subjects)
-        self.shuffle()
         self.ablation = ablation
 
         def _lambda(record, **kwargs):
@@ -64,6 +63,7 @@ class ATZDataset(Dataset):
         self.df['is_anamoly'] = self.df.apply(_lambda, axis=1)
 
         self.split()
+        self.shuffle()
 
     def shuffle(self):
         # shuffle dataframe
@@ -114,22 +114,24 @@ class ATZDataset(Dataset):
             df_normal = df_normal.iloc[split_len:, :]
             norm_len = len(df_normal)
 
-        if self.balanced:
+        if self.balanced and self.phase == "test":
             if norm_len > abnormal_count:
-                if self.phase == "test":
-                    df_normal = df_normal.sample(abnormal_count, random_state=self.random_state)
-                    norm_len = len(df_normal)
-                else:
-                    df_normal = df_normal.sample(abnormal_count * 2, random_state=self.random_state)
-                    norm_len = len(df_normal)
+                df_normal = df_normal.sample(abnormal_count, random_state=self.random_state)
 
         # concat normal and abnormal data
-        self.df = pd.concat([df_abnormal, df_normal])
+        if self.phase == "test":
+            self.df = pd.concat([df_abnormal, df_normal])
+            norm_len = len(df_normal)
+            abnormal_count = len(df_abnormal)
+        elif self.phase == "train":
+            self.df = pd.concat([df_normal])
+            norm_len = len(df_normal)
+            abnormal_count = 0
 
         # recalculate
         self.normal_count = norm_len
         self.abnormal_count = abnormal_count
-        msg = "Phase %s => Normal:Abnormal = %d:%d" % (self.phase, self.normal_count, self.abnormal_count)
+        # msg = "Phase %s => Normal:Abnormal = %d:%d" % (self.phase, self.normal_count, self.abnormal_count)
         # debug check
         # if self.phase == "train":
         #     assert abnormal_count == 0, "%s\nAbnormal data not allowed in train dataset." % msg
