@@ -189,7 +189,12 @@ class Skipattentionganomaly(BaseModel):
             self.opt.phase = 'test'
 
             scores = {}
-
+            file_names = []
+            bboxx1 = []
+            bboxx2 = []
+            bboxy1 = []
+            bboxy2 = []
+            label_txts = []
             # Create big error tensor for the test set.
             self.an_scores = torch.zeros(size=(len(self.data.valid.dataset),), dtype=torch.float32, device=self.device)
             self.gt_labels = torch.zeros(size=(len(self.data.valid.dataset),), dtype=torch.long, device=self.device)
@@ -206,6 +211,13 @@ class Skipattentionganomaly(BaseModel):
                 time_i = time.time()
 
                 if self.opt.dataset == "atz":
+                    meta = data[1]
+                    file_names.extend(meta['current_file'])
+                    bboxx1.extend(meta['x1'])
+                    bboxx2.extend(meta['x2'])
+                    bboxy1.extend(meta['y1'])
+                    bboxy2.extend(meta['y2'])
+                    label_txts.extend(meta['label_txt'])
                     data = data[0]
 
                 # Forward - Pass
@@ -263,6 +275,12 @@ class Skipattentionganomaly(BaseModel):
                 # Create data frame for scores and labels.
                 scores['scores'] = self.an_scores.cpu()
                 scores['labels'] = self.gt_labels.cpu()
+                scores['x1'] = bboxx1
+                scores['x2'] = bboxx2
+                scores['y1'] = bboxy1
+                scores['y2'] = bboxy2
+                scores['label_txt'] = label_txts
+                scores['file_name'] = file_names
                 hist = pd.DataFrame.from_dict(scores)
                 file = "%s/%s_%s_histogram.csv" % (saveto, self.opt.name, self.opt.phase)
                 print("Saving histogram @: ", file)
