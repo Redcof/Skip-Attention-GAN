@@ -38,8 +38,10 @@ python train.py \
 --manualseed 47 \
 --metric roc \
 --model skipattentionganomaly \
---name exp13_128x128_20230114 \
---niter 25 \
+--name exp14_contd13_128x128_20230114 \
+--niter 50 \
+--iter 7 \
+--load_weights output/exp13_128x128_20230114/train/weights/auc618\
 --outf ./output \
 --phase train \
 --print_freq 1280 \
