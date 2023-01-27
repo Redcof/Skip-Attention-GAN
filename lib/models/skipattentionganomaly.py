@@ -282,7 +282,7 @@ class Skipattentionganomaly(BaseModel):
                 scores['label_txt'] = label_txts
                 scores['file_name'] = file_names
                 hist = pd.DataFrame.from_dict(scores)
-                file = "%s/%s_%s_histogram.csv" % (saveto, self.opt.name, self.opt.phase)
+                file = "%s/%s_%s__epoch%d_histogram.csv" % (saveto, self.opt.name, self.opt.phase, self.epoch)
                 print("Saving histogram @: ", file)
                 hist.to_csv(file)
 

@@ -74,7 +74,8 @@ class ATZDataset(Dataset):
     def filter(self, atz_dataset_train_or_test_txt, classes, subjects):
         # read trainable/testable files names for the experiment
         file_names = []
-        if atz_dataset_train_or_test_txt:
+        if atz_dataset_train_or_test_txt is not None and os.path.exists(atz_dataset_train_or_test_txt):
+            print(atz_dataset_train_or_test_txt)
             with open(atz_dataset_train_or_test_txt, "r") as fp:
                 file_names = [line.strip() for line in fp.readlines()]
         if file_names:

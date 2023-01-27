@@ -22,7 +22,7 @@ if __name__ == '__main__':
 
     df = pd.read_csv(filename)
 
-    for idx, ((batch_x, batch_y), meta) in enumerate(data_wrap.test):
+    for idx, ((batch_x, batch_y), meta) in enumerate(data_wrap.val):
         df.iloc[idx:idx + opt.batchsize, "image_name"] = meta[:, "image"]
     print("Anomaly Statistics")
     print(df[df['labels'] == 1].describe())
