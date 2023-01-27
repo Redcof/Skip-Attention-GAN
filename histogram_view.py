@@ -11,7 +11,7 @@ from lib.data.dataloader import load_data
 from options import Options
 
 if __name__ == '__main__':
-    opt = Options().parser()
+    opt = Options().parse()
 
     data_wrap = load_data(opt)
 
@@ -22,6 +22,8 @@ if __name__ == '__main__':
 
     df = pd.read_csv(filename)
 
+    for idx, ((batch_x, batch_y), meta) in enumerate(data_wrap.test):
+        df.iloc[idx:idx + opt.batchsize, "image_name"] = meta[:, "image"]
     print("Anomaly Statistics")
     print(df[df['labels'] == 1].describe())
 
