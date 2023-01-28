@@ -145,6 +145,7 @@ def load_data(opt):
 
         train_ds = ATZDataset(patch_dataset_csv, opt.dataroot, "train",
                               atz_dataset_train_or_test_txt=train_dataset_txt,
+                              nc=opt.nc,
                               device=device,
                               classes=atz_classes,
                               patch_size=opt.isize,
@@ -158,6 +159,7 @@ def load_data(opt):
                               global_wavelet_transform=wavelet_transform if opt.atz_wavelet_denoise else None)
         valid_ds = ATZDataset(patch_dataset_csv, opt.dataroot, "test",
                               atz_dataset_train_or_test_txt=test_dataset_txt,
+                              nc=opt.nc,
                               device=device,
                               classes=atz_classes,
                               patch_size=opt.isize,

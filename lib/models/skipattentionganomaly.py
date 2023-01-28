@@ -76,13 +76,13 @@ class Skipattentionganomaly(BaseModel):
 
         ##
         # Initialize input tensors.
-        self.input = torch.empty(size=(self.opt.batchsize, 3, self.opt.isize, self.opt.isize), dtype=torch.float32,
+        self.input = torch.empty(size=(self.opt.batchsize, self.opt.nc, self.opt.isize, self.opt.isize), dtype=torch.float32,
                                  device=self.device)
-        self.noise = torch.empty(size=(self.opt.batchsize, 3, self.opt.isize, self.opt.isize), dtype=torch.float32,
+        self.noise = torch.empty(size=(self.opt.batchsize, self.opt.nc, self.opt.isize, self.opt.isize), dtype=torch.float32,
                                  device=self.device)
         self.label = torch.empty(size=(self.opt.batchsize,), dtype=torch.float32, device=self.device)
         self.gt = torch.empty(size=(opt.batchsize,), dtype=torch.long, device=self.device)
-        self.fixed_input = torch.empty(size=(self.opt.batchsize, 3, self.opt.isize, self.opt.isize),
+        self.fixed_input = torch.empty(size=(self.opt.batchsize, self.opt.nc, self.opt.isize, self.opt.isize),
                                        dtype=torch.float32, device=self.device)
         self.real_label = torch.ones(size=(self.opt.batchsize,), dtype=torch.float32, device=self.device)
         self.fake_label = torch.zeros(size=(self.opt.batchsize,), dtype=torch.float32, device=self.device)

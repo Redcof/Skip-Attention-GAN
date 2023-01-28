@@ -21,7 +21,7 @@ class ATZDataset(Dataset):
     def __init__(self, atz_patch_dataset_csv, img_dir, phase, atz_dataset_train_or_test_txt=None, transform=None,
                  classes=(), subjects=(), ablation=0, label_transform=None, device="cpu",
                  patch_size=128, patch_overlap=0.2, balanced=False,
-                 train_split=None, test_split=None,
+                 train_split=None, test_split=None, nc=3,
                  global_wavelet_transform=lambda x: x, random_state=47):
         assert train_split is None or test_split is None, ("Either of train_split and test_split is required."
                                                            "But both values "
@@ -49,6 +49,7 @@ class ATZDataset(Dataset):
         self.patch_overlap = patch_overlap
         self.random_state = random_state
         self.balanced = balanced
+        self.nc = nc
         self.normal_count = 0
         self.abnormal_count = 0
         # read CSV
@@ -218,7 +219,10 @@ class ATZDataset(Dataset):
             # prepare image path
             img_path = os.path.join(self.img_dir, current_file)
             # read imagedata
-            image = cv2.imread(img_path)
+            if self.nc == 3:
+                image = cv2.imread(img_path)
+            else:
+                image = cv2.imread(img_path, 0)
             # convert to greyscale
             # image = image.convert("L")
             if self.gbl_wavelet_transform:
