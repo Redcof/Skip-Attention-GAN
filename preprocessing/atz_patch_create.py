@@ -135,6 +135,62 @@ def box_intersect(main_box_x1y1x2y2, subject_box_x1y1x2y2):
     return False
 
 
+def my_patch(img, patch_size=128, overlap=0.2):
+    """
+    List of patches
+
+    """
+    import math
+
+    h, w = img.shape
+
+    step = int(math.ceil(patch_size * (1 - overlap)))
+
+    x1 = 0
+    y1 = 0
+    x2, y2 = patch_size, patch_size
+    patch_ls = []
+    patch_ind = []
+    break_col = False
+    col_items = 0
+    while True:  # col loop
+        if y2 > h:
+            y2 = h
+            y1 = y2 - patch_size
+            break_col = True
+        break_row = False
+        row_items = 0
+        while True:  # row loop
+            # if (x2 - w) >= step // 0.5:
+            #     x2 = w
+            #     x1 = x2 - patch_size
+            #     break_row = True
+
+            p = img[y1:y2, x1:x2]
+            patch_ls.append(p)
+            patch_ind.append((x1, x2, y1, y2))
+            row_items += 1
+            # if break_row:
+            #     break_row = True
+            #     x1 = 0
+            #     x2 = patch_size
+            #     break
+            if not (-(x2 - w) >= step * overlap):
+                x1 = 0
+                x2 = patch_size
+                break
+            x1 += step
+            x2 += step
+        col_items += 1
+        if break_col:
+            break
+        # if not (-(y2 - h) >= step * overlap):
+        #     break
+        y1 += step
+        y2 += step
+    return patch_ls, patch_ind, row_items, col_items
+
+
 def create_patch_dataset():
     # select image and annotation
     image_files = os.listdir(image_root)
@@ -199,10 +255,12 @@ def create_patch_dataset():
             cv2.imshow("mask", mask)
             print(np.unique(mask))
 
-        emp = EMPatches()
         overlap = 0.2
+        emp = EMPatches()
         img_patches, indices = emp.extract_patches(img, patchsize=patch_size, overlap=overlap)
         mask_patches, _ = emp.extract_patches(mask, patchsize=patch_size, overlap=overlap)
+        img_patches, indices, rs, cs = my_patch(img, patch_size, overlap)
+        mask_patches, _, _, _ = my_patch(mask, patch_size, overlap)
         # print(np.unique(mask))
         cols = 4
         rows = len(img_patches) // cols + 1
@@ -243,13 +301,46 @@ def create_patch_dataset():
             #     plt.imshow(img_p)
             #     plt.title(label_txt)
             #     plt.show()
-            global_box = box_dict.get(label_txt, (0, 0, 0, 0))
+            global_box = box_dict.get(label_txt, None)
+
             # mask_p[mask_p > 0] = 1  # replace all non zeros with 1
             # object area in musk
             obj_area_px = area_counter(mask_p, max_val)
             if max_val == 0:
                 obj_area_px = 0
+            relative_bbox = None
 
+            def relative_coord(o, s, m):
+                """
+                o: axis w.r.t origin
+                s: axis for shifted origin
+                m: max span of this new origin
+                s_: the new axis w.r.t shifted origin
+                """
+                s_ = o - s
+                if s_ < 0:
+                    # if negative, implies new axis is outside from the
+                    # new world of origin, thus make it to 0 relative to new world
+                    s_ = 0
+                if s_ > m:
+                    # if bigger, implies new axis is outside from the
+                    # new world of origin, thus make it to max relative to new world
+                    s_ = m
+                return s_
+
+            if global_box is not None:
+                x1, y1, x2, y2 = global_box
+                p1, p2, q1, q2 = patch_loc
+                # we have to move x1, x2, y1, y2 form origin (0,0) to new origin (p1, q1)
+                x1_ = relative_coord(x1, p1, patch_size)
+                x2_ = relative_coord(x2, p1, patch_size)
+                y1_ = relative_coord(y1, q1, patch_size)
+                y2_ = relative_coord(y2, q1, patch_size)
+
+                relative_bbox = (
+                    x1_, y1_,
+                    x2_, y2_
+                )
             dictionary = dict(image=image_name,
                               threat_present=threat_present,
                               front_back=front_back,
@@ -257,6 +348,7 @@ def create_patch_dataset():
                               label=class_index,
                               label_txt=label_txt,
                               global_x1y1x2y2=global_box,
+                              relative_x1y1x2y2=relative_bbox,
                               anomaly_size=obj_area_px, x1x2y1y2=patch_loc,
                               subject_gender=subject_gender,
                               subject_id="%s%s" % (subject_gender, subject_id))
