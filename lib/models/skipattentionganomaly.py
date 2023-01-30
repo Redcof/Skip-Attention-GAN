@@ -192,6 +192,8 @@ class Skipattentionganomaly(BaseModel):
             bboxy1 = []
             bboxy2 = []
             label_txts = []
+            patch_ids = []
+            global_x1y1x2y2s = []
             # Create big error tensor for the test set.
             self.an_scores = torch.zeros(size=(len(self.data.valid.dataset),), dtype=torch.float32, device=self.device)
             self.gt_labels = torch.zeros(size=(len(self.data.valid.dataset),), dtype=torch.long, device=self.device)
@@ -215,6 +217,8 @@ class Skipattentionganomaly(BaseModel):
                     bboxy1.extend(meta['y1'])
                     bboxy2.extend(meta['y2'])
                     label_txts.extend(meta['label_txt'])
+                    patch_ids.extend(meta['patch_id'])
+                    global_x1y1x2y2s.extend(meta['global_x1y1x2y2'])
                     data = data[0]
 
                 # Forward - Pass
@@ -278,6 +282,8 @@ class Skipattentionganomaly(BaseModel):
                 scores['y2'] = bboxy2
                 scores['label_txt'] = label_txts
                 scores['file_name'] = file_names
+                scores['patch_id'] = patch_ids
+                scores['global_x1y1x2y2'] = global_x1y1x2y2s
                 hist = pd.DataFrame.from_dict(scores)
                 file = "%s/%s_%s__epoch%d_histogram.csv" % (saveto, self.opt.name, self.opt.phase, self.epoch)
                 print("Saving histogram @: ", file)

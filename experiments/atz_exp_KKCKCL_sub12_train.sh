@@ -23,7 +23,7 @@ python train.py \
 --area_threshold 0.05 \
 --atz_ablation 0 \
 --atz_classes "[]" \
---atz_patch_db customdataset/atz/atz_patch_dataset__3_128_36_v2_10%_30_99%.csv \
+--atz_patch_db customdataset/atz/atz_patch_dataset__3_128_36_v2_10%_30_99%_nomulti.csv \
 --atz_patch_overlap 0.2 \
 --atz_subjects "[]" \
 --atz_wavelet "{'wavelet':'sym4', 'method':'VisuShrink','level':3, 'mode':'hard'}" \
@@ -38,16 +38,15 @@ python train.py \
 --manualseed 47 \
 --metric roc \
 --model skipattentionganomaly \
---name exp14_contd13_128x128_20230114 \
+--name exp14_gy_128x128_20230130 \
 --niter 50 \
---iter 7 \
---load_weights output/exp13_128x128_20230114/train/weights/auc618\
+--iter 0 \
 --outf ./output \
 --phase train \
 --print_freq 1280 \
 --save_image_freq 1280 \
 --save_test_images \
---verbose \
+--verbose
 #--atz_train_txt customdataset/atz/train.txt \
 #--atz_test_txt  customdataset/atz/trest.txt \
 echo "Training done."

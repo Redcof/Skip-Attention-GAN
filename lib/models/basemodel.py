@@ -261,7 +261,8 @@ class BaseModel():
             if batch_no_to_stop > 0 or epoch_to_stop == self.epoch:
                 self.opt.log("Mission control epoch:stop=>%d" % epoch_to_stop)
                 break
-        self.save_weights(self.epoch)
+        # save model at the end of
+        self.save_weights(self.opt.niter)
         print(">> Training model %s.[Done]" % self.name)
 
     ##
