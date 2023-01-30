@@ -221,6 +221,7 @@ class ATZDataset(Dataset):
             # read imagedata
             if self.nc == 3:
                 image = cv2.imread(img_path)
+                image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
             else:
                 image = cv2.imread(img_path, 0)
             # convert to greyscale

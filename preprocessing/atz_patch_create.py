@@ -140,7 +140,7 @@ def create_patch_dataset():
     image_files = os.listdir(image_root)
     atz_patch_dataset_df = pd.DataFrame()
     atz_patch_multiple_cls_df = pd.DataFrame()
-    nc = 3  # number of channels
+    nc = 1  # number of channels
     color_space = cv2.IMREAD_COLOR if nc == 3 else 0
 
     def non_zero_pixel_ch3(mask, val_to_search):
@@ -244,9 +244,11 @@ def create_patch_dataset():
             #     plt.title(label_txt)
             #     plt.show()
             global_box = box_dict.get(label_txt, (0, 0, 0, 0))
-            mask_p[mask_p > 0] = 1  # replace all non zeros with 1
+            # mask_p[mask_p > 0] = 1  # replace all non zeros with 1
             # object area in musk
             obj_area_px = area_counter(mask_p, max_val)
+            if max_val == 0:
+                obj_area_px = 0
 
             dictionary = dict(image=image_name,
                               threat_present=threat_present,
