@@ -139,6 +139,25 @@ def create_patch_dataset():
     # select image and annotation
     image_files = os.listdir(image_root)
     atz_patch_dataset_df = pd.DataFrame()
+    atz_patch_multiple_cls_df = pd.DataFrame()
+    nc = 3  # number of channels
+    color_space = cv2.IMREAD_COLOR if nc == 3 else 0
+
+    def non_zero_pixel_ch3(mask, val_to_search):
+        s1 = np.sum(mask_p[:, :, 0] == val_to_search)
+        s2 = np.sum(mask_p[:, :, 1] == val_to_search)
+        s3 = np.sum(mask_p[:, :, 2] == val_to_search)
+        return np.mean((s1, s2, s3)).astype('int')
+
+    def non_zero_pixel_ch1(img, val_to_search):
+        return np.sum(mask_p == val_to_search).astype('int')
+
+    area_counter = non_zero_pixel_ch3 if nc == 3 else non_zero_pixel_ch1
+
+    def select_major(mask_p):
+        unik = np.unique(mask_p)[1:]
+        return int(unik[np.argmax([np.sum(mask_p == clsidx) for clsidx in unik])])
+
     for image_name in tqdm(image_files):
         if not any([c in image_name for c in atz_classes[atz_ignore_cls_idx_lim + 1:]]):
             continue
@@ -154,7 +173,7 @@ def create_patch_dataset():
         # read annotation
         name, boxes = read_vocxml_content(str(voc_xml))
         # read image
-        img = cv2.imread(str(image_root / image_name))
+        img = cv2.imread(str(image_root / image_name), color_space)
         # print(img.shape)
         # create a mask to store class info
         mask = np.zeros(img.shape)
@@ -188,8 +207,24 @@ def create_patch_dataset():
         cols = 4
         rows = len(img_patches) // cols + 1
         dictionary_ls = []
+        multiple_ls = []
         for idx, (img_p, mask_p, patch_loc) in enumerate(zip(img_patches, mask_patches, indices)):
             max_val = int(np.max(mask_p))
+            unik = np.unique(mask_p)
+            if len(unik) > 2:
+                for clsidx in unik:
+                    if clsidx == 0:
+                        continue
+                    dupdict = dict(
+                        image=image_name,
+                        patch_id=idx,
+                        class_id=int(clsidx),
+                        class_label=atz_classes[int(clsidx)]
+                    )
+                    multiple_ls.append(dupdict)
+                max_val = select_major(mask_p)
+                continue
+
             img_p = img_p.copy()
             mask_p = mask_p.copy()
             # class label
@@ -211,7 +246,7 @@ def create_patch_dataset():
             global_box = box_dict.get(label_txt, (0, 0, 0, 0))
             mask_p[mask_p > 0] = 1  # replace all non zeros with 1
             # object area in musk
-            obj_area_px = np.sum(mask_p.flatten())
+            obj_area_px = area_counter(mask_p, max_val)
 
             dictionary = dict(image=image_name,
                               threat_present=threat_present,
@@ -241,11 +276,19 @@ def create_patch_dataset():
         # update dataframe
         df_dictionary = pd.DataFrame(dictionary_ls)
         atz_patch_dataset_df = pd.concat([atz_patch_dataset_df, df_dictionary], ignore_index=True)
+
+        df_dictionary = pd.DataFrame(multiple_ls)
+        atz_patch_multiple_cls_df = pd.concat([atz_patch_multiple_cls_df, df_dictionary], ignore_index=True)
     # save csv
     postfix = "_%d_%d_%d" % (atz_ignore_cls_idx_lim + 1, patch_size, len(indices))
     patch_dataset_csv = str(dataset_save_path / ("atz_patch_dataset_%s.csv" % postfix))
     atz_patch_dataset_df.columns = dictionary.keys()
     atz_patch_dataset_df.to_csv(patch_dataset_csv)
+
+    patch_dataset_csv = str(dataset_save_path / ("atz_multi_class_%s.csv" % postfix))
+    atz_patch_multiple_cls_df.columns = dupdict.keys()
+    atz_patch_multiple_cls_df.to_csv(patch_dataset_csv)
+
     # print("Files are saved @", str(patch_image_save_path))
     print("Metadata @", patch_dataset_csv, len(atz_patch_dataset_df), "items")
     print("accepted", accepted)

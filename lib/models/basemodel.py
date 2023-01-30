@@ -127,12 +127,12 @@ class BaseModel():
             torch.save({'epoch': epoch, 'state_dict': self.netg.state_dict()}, f'{weight_dir}/netG_best.pth')
             torch.save({'epoch': epoch, 'state_dict': self.netd.state_dict()}, f'{weight_dir}/netD_best.pth')
             print("Saving model checkpoint at: ", f'{weight_dir}/netG_best.pth')
-            # print("Saving model checkpoint at: ", f'{weight_dir}/netD_best.pth')
+            print("Saving model checkpoint at: ", f'{weight_dir}/netD_best.pth')
         else:
             torch.save({'epoch': epoch, 'state_dict': self.netd.state_dict()}, f"{weight_dir}/netD_{epoch}.pth")
             torch.save({'epoch': epoch, 'state_dict': self.netg.state_dict()}, f"{weight_dir}/netG_{epoch}.pth")
             print("Saving model checkpoint at: ", f"{weight_dir}/netG_{epoch}.pth")
-            # print("Saving model checkpoint at: ", f"{weight_dir}/netD_{epoch}.pth")
+            print("Saving model checkpoint at: ", f"{weight_dir}/netD_{epoch}.pth")
 
     def load_weights(self, epoch=None, is_best: bool = False, path=None):
         """ Load pre-trained weights of NetG and NetD
@@ -261,7 +261,7 @@ class BaseModel():
             if batch_no_to_stop > 0 or epoch_to_stop == self.epoch:
                 self.opt.log("Mission control epoch:stop=>%d" % epoch_to_stop)
                 break
-
+        self.save_weights(self.epoch)
         print(">> Training model %s.[Done]" % self.name)
 
     ##
