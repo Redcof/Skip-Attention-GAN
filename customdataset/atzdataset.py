@@ -164,6 +164,7 @@ class ATZDataset(Dataset):
         label_txt = record[["label_txt"]].values[0]
         x1, x2, y1, y2 = ast.literal_eval(record[["x1x2y1y2"]].values[0])
         global_x1y1x2y2 = record[["global_x1y1x2y2"]].values[0]
+        relative_x1y1x2y2 = record[["relative_x1y1x2y2"]].values[0]
         anomaly_size = record[["anomaly_size"]].values[0]
         label = record[["is_anamoly"]].values[0]
         # read image from cache
@@ -177,7 +178,8 @@ class ATZDataset(Dataset):
         return dict(current_file=current_file, label_txt=label_txt, x1=x1, x2=x2, y1=y1, y2=y2,
                     anomaly_size=anomaly_size, is_anomaly=label, image_patch=img_p.copy(),
                     patch_id=patch_id,
-                    global_x1y1x2y2=global_x1y1x2y2,
+                    global_x1y1x2y2=str(global_x1y1x2y2),
+                    relative_x1y1x2y2=str(relative_x1y1x2y2),
                     #    mostly_dark=not is_good
                     )
 
