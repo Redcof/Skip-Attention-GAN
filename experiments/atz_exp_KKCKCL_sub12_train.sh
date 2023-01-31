@@ -23,7 +23,7 @@ python train.py \
 --area_threshold 0.1 \
 --atz_ablation 0 \
 --atz_classes "[]" \
---atz_patch_db customdataset/atz/atz_patch_dataset__3_128_36_v2_10%_30_99%_multimax.csv \
+--atz_patch_db customdataset/atz/atz_patch_dataset__3_128_27_v3_10%_30_99%_multiple_refbox.csv \
 --atz_subjects "[]" \
 --atz_wavelet "{'wavelet':'sym4', 'method':'VisuShrink','level':3, 'mode':'hard'}" \
 --atz_wavelet_denoise \
@@ -33,12 +33,12 @@ python train.py \
 --device cuda \
 --display \
 --isize 128 \
---lr 0.0005 \
---nz 200 \
+--lr 0.0002 \
+--nz 100 \
 --manualseed 47 \
 --metric roc \
 --model skipattentionganomaly \
---name exp15_gy_10%_128x128_20230130 \
+--name exp16_gry_multibox_20230131 \
 --niter 50 \
 --iter 0 \
 --outf ./output \

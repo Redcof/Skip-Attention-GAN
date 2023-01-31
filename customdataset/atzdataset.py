@@ -12,6 +12,8 @@ from empatches import EMPatches
 from torch.utils.data import Dataset
 from torchvision.transforms import transforms
 
+from preprocessing.patch import my_patch
+
 
 class ATZDataset(Dataset):
     CACHE_ITEM_LIMIT = 5  # 5 files
@@ -232,11 +234,12 @@ class ATZDataset(Dataset):
                 image = self.gbl_wavelet_transform(image)
 
             # create patches
-            emp = EMPatches()
-            # print("patch_size", type(self.patch_size), self.patch_size)
-            # print("patch_overlap", type(self.patch_overlap), self.patch_overlap)
-            img_patches, indices = emp.extract_patches(image, patchsize=int(self.patch_size),
-                                                       overlap=float(self.patch_overlap))
+            # emp = EMPatches()
+            # img_patches, indices = emp.extract_patches(image, patchsize=int(self.patch_size),
+            # overlap=float(self.patch_overlap))
+
+            img_patches, indices, r, c = my_patch(image, int(self.patch_size), float(self.patch_overlap))
+
             # check cache size
             self.cache_limit_check()
             # save image to cache
