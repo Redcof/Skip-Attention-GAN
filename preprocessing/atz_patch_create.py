@@ -108,7 +108,7 @@ def is_mostly_black(image, is_anomaly, threshold, percent):
         return False
 
 
-def good_enough(img_p, is_anomaly):
+def good_enough(img_p, is_anomaly, threshold=30, percent=0.99):
     """
     If all pixels are black or contains salt-n-pepper noise
     we can return False.
@@ -123,14 +123,15 @@ def rectangle(x1, y1, x2, y2):
     ))
 
 
-def box_intersect(main_box_x1y1x2y2, subject_box_x1y1x2y2):
+def box_intersect(main_box_x1y1x2y2, subject_box_x1x2y1y2, overlap=0.1):
+    x1, x2, y1, y2 = subject_box_x1x2y1y2
     main_rect = rectangle(*main_box_x1y1x2y2)
-    subject_rect = rectangle(*subject_box_x1y1x2y2)
+    subject_rect = rectangle(x1, y1, x2, y2)
     is_intersect = main_rect.intersects(subject_rect)
     if is_intersect:
         intersection = main_rect.intersection(subject_rect)
         intersection_area = intersection.area
-        if intersection_area / PATCH_AREA >= 0.1:
+        if intersection_area / PATCH_AREA >= overlap:
             return True
     return False
 
@@ -196,8 +197,32 @@ def create_patch_dataset():
     image_files = os.listdir(image_root)
     atz_patch_dataset_df = pd.DataFrame()
     atz_patch_multiple_cls_df = pd.DataFrame()
-    nc = 1  # number of channels
+    # version
+    version = "v3"  # v1: all patch, v2: patch goodness selection, v3: reference box
+    adjective = ""
+    # patch overlap during patch creation
+    patch_overlap = 0.2
+    # human bbox overlap w.r.t. a selected patch.
+    # If a patch and human bbox intersection is less than 10% we discard the patch
+    # as it may not carry no information. This is applicable for normal patches only
+    human_overlap = 0.1
+    goodness = 30, 0.99
+    # in case of multiple objects in a single patch whether to select
+    # or reject the patch
+    no_multi = False
+    # in case of multiple objects in a single patch, once we choose to select
+    # the patch, whether to choose all of them or the object with maximum area
+    multi_max = False
+    nc = 1  # number of channels (BGR or GREY)
     color_space = cv2.IMREAD_COLOR if nc == 3 else 0
+
+    if no_multi is True:
+        # reject patch with multi-object
+        adjective = "nomulti_refbox"
+    elif multi_max is True:
+        adjective = "multimax_refbox"
+    else:
+        adjective = "multiple_refbox"
 
     def non_zero_pixel_ch3(mask, val_to_search):
         s1 = np.sum(mask_p[:, :, 0] == val_to_search)
@@ -213,6 +238,24 @@ def create_patch_dataset():
     def select_major(mask_p):
         unik = np.unique(mask_p)[1:]
         return int(unik[np.argmax([np.sum(mask_p == clsidx) for clsidx in unik])])
+
+    def relative_coord(o, s, m):
+        """
+        o: axis w.r.t origin
+        s: axis for shifted origin
+        m: max span of this new origin
+        s_: the new axis w.r.t shifted origin
+        """
+        s_ = o - s
+        if s_ < 0:
+            # if negative, implies new axis is outside from the
+            # new world of origin, thus make it to 0 relative to new world
+            s_ = 0
+        if s_ > m:
+            # if bigger, implies new axis is outside from the
+            # new world of origin, thus make it to max relative to new world
+            s_ = m
+        return s_
 
     for image_name in tqdm(image_files):
         if not any([c in image_name for c in atz_classes[atz_ignore_cls_idx_lim + 1:]]):
@@ -255,22 +298,21 @@ def create_patch_dataset():
             cv2.imshow("mask", mask)
             print(np.unique(mask))
 
-        overlap = 0.2
-        emp = EMPatches()
-        img_patches, indices = emp.extract_patches(img, patchsize=patch_size, overlap=overlap)
-        mask_patches, _ = emp.extract_patches(mask, patchsize=patch_size, overlap=overlap)
-        img_patches, indices, rs, cs = my_patch(img, patch_size, overlap)
-        mask_patches, _, _, _ = my_patch(mask, patch_size, overlap)
+        # emp = EMPatches()
+        # img_patches, indices = emp.extract_patches(img, patchsize=patch_size, overlap=patch_overlap)
+        # mask_patches, _ = emp.extract_patches(mask, patchsize=patch_size, overlap=patch_overlap)
+        img_patches, indices, rs, cs = my_patch(img, patch_size, patch_overlap)
+        mask_patches, _, _, _ = my_patch(mask, patch_size, patch_overlap)
         # print(np.unique(mask))
         cols = 4
         rows = len(img_patches) // cols + 1
         dictionary_ls = []
         multiple_ls = []
         for idx, (img_p, mask_p, patch_loc) in enumerate(zip(img_patches, mask_patches, indices)):
-            max_val = int(np.max(mask_p))
-            unik = np.unique(mask_p)
-            if len(unik) > 2:
-                for clsidx in unik:
+            class_vals = [int(np.max(mask_p))]
+            uniks = np.unique(mask_p).astype('int')
+            if len(uniks) > 2:
+                for clsidx in uniks:
                     if clsidx == 0:
                         continue
                     dupdict = dict(
@@ -280,101 +322,94 @@ def create_patch_dataset():
                         class_label=atz_classes[int(clsidx)]
                     )
                     multiple_ls.append(dupdict)
-                max_val = select_major(mask_p)
-                continue
+                if no_multi is True:
+                    # reject patch with multi-object
+                    continue
+                elif multi_max is True:
+                    # select patch with multi-object and choose max class
+                    class_vals = [select_major(mask_p)]
+                else:
+                    # select patch with multi-object and choose all classes
+                    class_vals = [int(unik) for unik in uniks]
 
             img_p = img_p.copy()
             mask_p = mask_p.copy()
-            # class label
-            class_index = max_val
 
-            # class name
-            label_txt = atz_classes[class_index]
-            if max_val == 0:
-                # it's a normal image
-                if not box_intersect(box_dict["HUMAN"], patch_loc):
+            for class_index in class_vals:
+
+                # class name
+                label_txt = atz_classes[class_index]
+                if class_index == 0:
+                    # it's a normal image
+                    if not box_intersect(box_dict["HUMAN"], patch_loc, human_overlap):
+                        continue
+                if not good_enough(img_p, class_index > 3, *goodness):
                     continue
-            if not good_enough(img_p, class_index > 3):
-                continue
 
-            # if class_index >= 3:
-            #     plt.imshow(img_p)
-            #     plt.title(label_txt)
-            #     plt.show()
-            global_box = box_dict.get(label_txt, None)
+                # if class_index >= 3:
+                #     plt.imshow(img_p)
+                #     plt.title(label_txt)
+                #     plt.show()
+                global_box = box_dict.get(label_txt, None)
 
-            # mask_p[mask_p > 0] = 1  # replace all non zeros with 1
-            # object area in musk
-            obj_area_px = area_counter(mask_p, max_val)
-            if max_val == 0:
-                obj_area_px = 0
-            relative_bbox = None
+                # mask_p[mask_p > 0] = 1  # replace all non zeros with 1
+                # object area in musk
+                obj_area_px = area_counter(mask_p, class_index)
+                if class_index == 0:
+                    obj_area_px = 0
+                relative_bbox = None
+                if global_box is not None:
+                    x1, y1, x2, y2 = global_box
+                    p1, p2, q1, q2 = patch_loc
+                    # we have to move x1, x2, y1, y2 form origin (0,0) to new origin (p1, q1)
+                    x1_ = relative_coord(x1, p1, patch_size)
+                    x2_ = relative_coord(x2, p1, patch_size)
+                    y1_ = relative_coord(y1, q1, patch_size)
+                    y2_ = relative_coord(y2, q1, patch_size)
 
-            def relative_coord(o, s, m):
-                """
-                o: axis w.r.t origin
-                s: axis for shifted origin
-                m: max span of this new origin
-                s_: the new axis w.r.t shifted origin
-                """
-                s_ = o - s
-                if s_ < 0:
-                    # if negative, implies new axis is outside from the
-                    # new world of origin, thus make it to 0 relative to new world
-                    s_ = 0
-                if s_ > m:
-                    # if bigger, implies new axis is outside from the
-                    # new world of origin, thus make it to max relative to new world
-                    s_ = m
-                return s_
+                    relative_bbox = (
+                        x1_, y1_,
+                        x2_, y2_
+                    )
 
-            if global_box is not None:
-                x1, y1, x2, y2 = global_box
-                p1, p2, q1, q2 = patch_loc
-                # we have to move x1, x2, y1, y2 form origin (0,0) to new origin (p1, q1)
-                x1_ = relative_coord(x1, p1, patch_size)
-                x2_ = relative_coord(x2, p1, patch_size)
-                y1_ = relative_coord(y1, q1, patch_size)
-                y2_ = relative_coord(y2, q1, patch_size)
+                dictionary = dict(image=image_name,
+                                  threat_present=threat_present,
+                                  front_back=front_back,
+                                  patch_id=idx,
+                                  label=class_index,
+                                  label_txt=label_txt,
+                                  global_x1y1x2y2=global_box,
+                                  relative_x1y1x2y2=relative_bbox,
+                                  anomaly_size=obj_area_px, x1x2y1y2=patch_loc,
+                                  subject_gender=subject_gender,
+                                  subject_id="%s%s" % (subject_gender, subject_id))
+                # prepare record
+                dictionary_ls.append(dictionary)
+                # save image
+                # cv2.imwrite(str(patch_image_save_path / patch_file_name), img_p)
+                if display:
+                    ax = plt.subplot(rows, cols, idx + 1)
+                    ax.axis("off")
+                    mask_rgb = mask_p.copy().astype('uint8')
+                    mask_rgb[mask_rgb > 0] = 255
+                    ax.set_title("%d" % idx, fontdict=dict(color="red"))
+                    ax.imshow(np.hstack((img_p, mask_rgb)))
 
-                relative_bbox = (
-                    x1_, y1_,
-                    x2_, y2_
-                )
-            dictionary = dict(image=image_name,
-                              threat_present=threat_present,
-                              front_back=front_back,
-                              patch_id=idx,
-                              label=class_index,
-                              label_txt=label_txt,
-                              global_x1y1x2y2=global_box,
-                              relative_x1y1x2y2=relative_bbox,
-                              anomaly_size=obj_area_px, x1x2y1y2=patch_loc,
-                              subject_gender=subject_gender,
-                              subject_id="%s%s" % (subject_gender, subject_id))
-            # prepare record
-            dictionary_ls.append(dictionary)
-            # save image
-            # cv2.imwrite(str(patch_image_save_path / patch_file_name), img_p)
-            if display:
-                ax = plt.subplot(rows, cols, idx + 1)
-                ax.axis("off")
-                mask_rgb = mask_p.copy().astype('uint8')
-                mask_rgb[mask_rgb > 0] = 255
-                ax.set_title("%d" % idx, fontdict=dict(color="red"))
-                ax.imshow(np.hstack((img_p, mask_rgb)))
-
-                # ax = plt.subplot(rows, cols, idx + 2)
-                # ax.axis("off")
-                # ax.imshow(mask_p)
+                    # ax = plt.subplot(rows, cols, idx + 2)
+                    # ax.axis("off")
+                    # ax.imshow(mask_p)
         # update dataframe
         df_dictionary = pd.DataFrame(dictionary_ls)
         atz_patch_dataset_df = pd.concat([atz_patch_dataset_df, df_dictionary], ignore_index=True)
 
         df_dictionary = pd.DataFrame(multiple_ls)
         atz_patch_multiple_cls_df = pd.concat([atz_patch_multiple_cls_df, df_dictionary], ignore_index=True)
+        # patch loop for one file ends here
     # save csv
-    postfix = "_%d_%d_%d" % (atz_ignore_cls_idx_lim + 1, patch_size, len(indices))
+    postfix = "_%d_%d_%d_%s_%d%%_%d_%d%%_%s" % (atz_ignore_cls_idx_lim + 1,
+                                                patch_size, len(indices), version,
+                                                int(human_overlap * 100), goodness[0], int(goodness[1] * 100),
+                                                adjective)
     patch_dataset_csv = str(dataset_save_path / ("atz_patch_dataset_%s.csv" % postfix))
     atz_patch_dataset_df.columns = dictionary.keys()
     atz_patch_dataset_df.to_csv(patch_dataset_csv)
