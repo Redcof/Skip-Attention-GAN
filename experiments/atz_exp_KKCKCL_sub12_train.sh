@@ -20,11 +20,10 @@ export DATA_ROOT="/Users/soumen/Downloads/Datasets/ActiveTerahertzImagingDataset
 export DATA_ROOT="/mnt/c/Users/dndlssardar/Downloads/THZ_dataset_det_VOC/JPEGImages" # wsl
 # run training
 python train.py \
---area_threshold 0.05 \
+--area_threshold 0.1 \
 --atz_ablation 0 \
 --atz_classes "[]" \
---atz_patch_db customdataset/atz/atz_patch_dataset__3_128_36_v2_10%_30_99%_nomulti.csv \
---atz_patch_overlap 0.2 \
+--atz_patch_db customdataset/atz/atz_patch_dataset__3_128_36_v2_10%_30_99%_multimax.csv \
 --atz_subjects "[]" \
 --atz_wavelet "{'wavelet':'sym4', 'method':'VisuShrink','level':3, 'mode':'hard'}" \
 --atz_wavelet_denoise \
@@ -34,11 +33,12 @@ python train.py \
 --device cuda \
 --display \
 --isize 128 \
---lr 0.0002 \
+--lr 0.0005 \
+--nz 200 \
 --manualseed 47 \
 --metric roc \
 --model skipattentionganomaly \
---name exp14_gy_128x128_20230130 \
+--name exp15_gy_10%_128x128_20230130 \
 --niter 50 \
 --iter 0 \
 --outf ./output \

@@ -227,7 +227,7 @@ class BaseModel():
 
             # check mission control instruction
             batch_no_to_stop = ast.literal_eval(Options.mission_control("batch", "stop"))
-            if batch_no_to_stop != -1 and batch_no_to_stop == (epoch_iter // self.opt.batchsize):
+            if batch_no_to_stop != -1 and batch_no_to_stop >= (epoch_iter // self.opt.batchsize):
                 self.opt.log("Mission control batch:stop=>%d" % batch_no_to_stop)
                 break
         print(">> Training model %s. Epoch %d/%d" % (self.name, self.epoch + 1, self.opt.niter))
@@ -258,7 +258,7 @@ class BaseModel():
             # check mission control instruction
             epoch_to_stop = ast.literal_eval(Options.mission_control("epoch", "stop"))
             batch_no_to_stop = ast.literal_eval(Options.mission_control("batch", "stop"))
-            if batch_no_to_stop > 0 or epoch_to_stop == self.epoch:
+            if batch_no_to_stop > 0 or epoch_to_stop >= self.epoch:
                 self.opt.log("Mission control epoch:stop=>%d" % epoch_to_stop)
                 break
         # save model at the end of
