@@ -164,7 +164,10 @@ class ATZDataset(Dataset):
         label_txt = record[["label_txt"]].values[0]
         x1, x2, y1, y2 = ast.literal_eval(record[["x1x2y1y2"]].values[0])
         global_x1y1x2y2 = record[["global_x1y1x2y2"]].values[0]
-        relative_x1y1x2y2 = record[["relative_x1y1x2y2"]].values[0]
+        try:
+            relative_x1y1x2y2 = record[["relative_x1y1x2y2"]].values[0]
+        except:
+            relative_x1y1x2y2 = None
         anomaly_size = record[["anomaly_size"]].values[0]
         label = record[["is_anamoly"]].values[0]
         # read image from cache

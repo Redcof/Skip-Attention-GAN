@@ -8,6 +8,7 @@ import pywt
 from matplotlib import pyplot as plt
 from skimage.metrics import peak_signal_noise_ratio
 from skimage.restoration import estimate_sigma, denoise_wavelet
+from tqdm import tqdm
 
 
 def w2d(img_8C1, mode='haar', level=1, display=False):
@@ -155,7 +156,7 @@ if __name__ == '__main__':
         root = pathlib.Path(r"C:\Users\dndlssardar\Downloads\THZ_dataset_det_VOC\JPEGImages")
 
     # files
-    files = ["S_N_M2_SS_F_C_MD_V_W_back_0904091058.jpg", "T_P_M6_MD_F_LL_CK_F_C_WB_F_RT_back_0906154134.jpg"]
+    files = os.listdir(str(root))
 
     # wavelet settings
     d = {'wavelet': 'sym4', 'method': 'VisuShrink', 'level': 1, 'mode': 'soft'}
@@ -163,6 +164,32 @@ if __name__ == '__main__':
     method_ = ["VisuShrink"]  # "BayesShrink",
     mode_ = ["soft", "hard"]  # "hard"
     wavelets = ['bior6.8', 'coif17']  # 'bior4.4'
+
+    psnrs1 = []
+    psnrs2 = []
+    for file in tqdm(files):
+        img_bgr = cv2.imread(str(root / file))
+        img_rgb = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2RGB)
+        _, psnr1 = wavelet_denoise_rgb(img_rgb.copy(),
+                                       channel_axis=2,
+                                       wavelet='sym4',
+                                       method='VisuShrink',
+                                       threshold_mode='soft',
+                                       decomposition_level=2, psnr=True)
+        _, psnr2 = wavelet_denoise_rgb(img_rgb.copy(),
+                                       channel_axis=2,
+                                       wavelet='bior4.4',
+                                       method='VisuShrink',
+                                       threshold_mode='soft',
+                                       decomposition_level=2, psnr=True)
+        # denos_img = enhance_contrast_by_wavelets(img_rgb.copy(), 0.2)
+        # psnr1 = peak_signal_noise_ratio(img_rgb, denos_img1)
+        # psnr2 = peak_signal_noise_ratio(img_rgb, denos_img2)
+        psnrs1.append(psnr1)
+        psnrs2.append(psnr2)
+    print("sym4", np.mean(np.array(psnrs1)))
+    print("bior4.4", np.mean(np.array(psnrs2)))
+    exit()
 
     print(pywt.wavelist())
     cols = 6

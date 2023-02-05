@@ -141,3 +141,5 @@ AnamolyScore=
     50%=	?
     75%=	?
     max=	?
+
+experiment 9: AUC 68 6 ['KK', 'CK', 'CL', 'MD', 'SS', 'GA']

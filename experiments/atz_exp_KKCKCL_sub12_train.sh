@@ -22,7 +22,7 @@ export DATA_ROOT="/mnt/c/Users/dndlssardar/Downloads/THZ_dataset_det_VOC/JPEGIma
 python train.py \
 --area_threshold 0.1 \
 --atz_ablation 0 \
---atz_classes "[]" \
+--atz_classes "['KK', 'CK', 'CL', 'MD', 'SS', 'GA']" \
 --atz_patch_db customdataset/atz/atz_patch_dataset__3_128_27_v3_10%_30_99%_multiple_refbox.csv \
 --atz_subjects "[]" \
 --atz_wavelet "{'wavelet':'sym4', 'method':'VisuShrink','level':3, 'mode':'hard'}" \
@@ -38,7 +38,7 @@ python train.py \
 --manualseed 47 \
 --metric roc \
 --model skipattentionganomaly \
---name exp16_gry_multibox_20230131 \
+--name exp17_gry_6cls_multibox_20230131 \
 --niter 50 \
 --iter 0 \
 --outf ./output \
